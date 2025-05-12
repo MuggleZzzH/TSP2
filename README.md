@@ -67,7 +67,7 @@ TripPlannerApp/
 
 1.  **克隆仓库:**
     ```bash
-    git clone <your-repository-url>
+    git clone git@github.com:MuggleZzzH/TSP2.git
     cd TripPlannerApp
     ```
 2.  **准备数据文件:**
