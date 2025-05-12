@@ -6,7 +6,9 @@ import com.cpt204.finalproject.model.RoadNetwork;
 import com.cpt204.finalproject.services.*;
 
 import java.util.List;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Scanner;
 
 public class Main {
 
@@ -51,36 +53,38 @@ public class Main {
         );
         System.out.println("Services initialized using Dijkstra for on-demand pathfinding.");
 
-        // 3. Define Trip Parameters (Example)
-        // Phoenix AZ to San Antonio TX, visiting attractions from the smaller dataset
-        String startCityName = "Phoenix AZ";
-        String endCityName = "San Antonio TX";
-        List<String> attractionsToVisit = Arrays.asList(
-            "Desert Botanical Garden", // Located in Phoenix AZ
-            "The Alamo" // Located in San Antonio TX
-            // "The Sixth Floor Museum" // Located in Dallas TX - another option
-        );
-        
-        // Example with fewer POIs (should use Permutation)
-        // String startCityName = "Los Angeles CA";
-        // String endCityName = "San Francisco CA";
-        // List<String> attractionsToVisit = Arrays.asList("Disneyland");
+        // 3. Get Trip Parameters from User Input
+        try (Scanner scanner = new Scanner(System.in)) {
+            System.out.print("Enter start city name: ");
+            String startCityName = scanner.nextLine();
 
-        System.out.println("\nPlanning trip from: " + startCityName + " to: " + endCityName);
-        if (!attractionsToVisit.isEmpty()) {
-            System.out.println("Visiting attractions: " + String.join(", ", attractionsToVisit));
-        } else {
-            System.out.println("No intermediate attractions to visit.");
+            System.out.print("Enter end city name: ");
+            String endCityName = scanner.nextLine();
+
+            List<String> attractionsToVisit = new ArrayList<>();
+            System.out.println("Enter names of attractions to visit, one per line (leave empty and press Enter when done):");
+            while (true) {
+                System.out.print("Attraction name (or press Enter to finish): ");
+                String poiName = scanner.nextLine();
+                if (poiName == null || poiName.trim().isEmpty()) {
+                    break; // Exit loop if input is empty
+                }
+                attractionsToVisit.add(poiName.trim()); // Add trimmed name
+            }
+
+            // 4. Plan the Trip
+            // You can adjust useTimeout and timeoutMillis here
+            // long customTimeout = 60000; // 60 seconds
+            TripPlan plan = tripPlanningService.planTrip(startCityName, endCityName, attractionsToVisit, true, 30000L); // Using default timeout
+            
+            // 5. Print Results
+            System.out.println("\n--- Trip Plan Result ---");
+            System.out.println(plan.toString());
+
+        } catch (Exception e) {
+            System.err.println("An error occurred during input or planning: " + e.getMessage());
+            e.printStackTrace();
         }
-
-        // 4. Plan the Trip
-        // You can adjust useTimeout and timeoutMillis here
-        // long customTimeout = 60000; // 60 seconds
-        TripPlan plan = tripPlanningService.planTrip(startCityName, endCityName, attractionsToVisit, true, 30000L); // Using default timeout
-
-        // 5. Print Results
-        System.out.println("\n--- Trip Plan Result ---");
-        System.out.println(plan.toString());
 
         System.out.println("\nApplication finished.");
     }

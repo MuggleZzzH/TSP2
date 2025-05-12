@@ -1,0 +1,436 @@
+CityA,CityB,Distance
+New York NY,Los Angeles CA,2800
+New York NY,Chicago IL,790
+New York NY,Houston TX,1627
+New York NY,Phoenix AZ,2400
+New York NY,Philadelphia PA,95
+New York NY,San Antonio TX,1800
+New York NY,San Diego CA,2800
+New York NY,Dallas TX,1550
+New York NY,San Jose CA,2900
+New York NY,Austin TX,1700
+New York NY,Jacksonville FL,1100
+New York NY,Fort Worth TX,1600
+New York NY,Columbus OH,500
+New York NY,Charlotte NC,640
+New York NY,Seattle WA,2850
+New York NY,St Louis MO,950
+New York NY,Detroit MI,640
+New York NY,Boston MA,220
+New York NY,Cleveland OH,480
+New York NY,New Orleans LA,1300
+New York NY,Minneapolis MN,1200
+New York NY,Memphis TN,1100
+New York NY,Washington DC,240
+New York NY,San Francisco CA,2900
+New York NY,Las Vegas NV,2500
+New York NY,Atlanta GA,850
+New York NY,Denver CO,1750
+New York NY,Nashville TN,900
+New York NY,Portland OR,2900
+Los Angeles CA,Chicago IL,2015
+Los Angeles CA,Houston TX,1540
+Los Angeles CA,Phoenix AZ,370
+Los Angeles CA,Philadelphia PA,2700
+Los Angeles CA,San Antonio TX,1370
+Los Angeles CA,San Diego CA,120
+Los Angeles CA,Dallas TX,1435
+Los Angeles CA,San Jose CA,340
+Los Angeles CA,Austin TX,1370
+Los Angeles CA,Jacksonville FL,2700
+Los Angeles CA,Fort Worth TX,1440
+Los Angeles CA,Columbus OH,2000
+Los Angeles CA,Charlotte NC,2450
+Los Angeles CA,Seattle WA,1150
+Los Angeles CA,St Louis MO,1840
+Los Angeles CA,Detroit MI,2300
+Los Angeles CA,Boston MA,3000
+Los Angeles CA,Cleveland OH,2350
+Los Angeles CA,New Orleans LA,1850
+Los Angeles CA,Minneapolis MN,1990
+Los Angeles CA,Memphis TN,1800
+Los Angeles CA,Washington DC,2650
+Los Angeles CA,San Francisco CA,380
+Los Angeles CA,Las Vegas NV,270
+Los Angeles CA,Atlanta GA,2180
+Los Angeles CA,Denver CO,1020
+Los Angeles CA,Nashville TN,1990
+Los Angeles CA,Portland OR,960
+Chicago IL,Houston TX,1080
+Chicago IL,Phoenix AZ,1750
+Chicago IL,Philadelphia PA,760
+Chicago IL,San Antonio TX,1080
+Chicago IL,San Diego CA,2050
+Chicago IL,Dallas TX,960
+Chicago IL,San Jose CA,2100
+Chicago IL,Austin TX,980
+Chicago IL,Jacksonville FL,940
+Chicago IL,Fort Worth TX,970
+Chicago IL,Columbus OH,170
+Chicago IL,Charlotte NC,540
+Chicago IL,Seattle WA,2060
+Chicago IL,St Louis MO,300
+Chicago IL,Detroit MI,280
+Chicago IL,Boston MA,980
+Chicago IL,Cleveland OH,350
+Chicago IL,New Orleans LA,920
+Chicago IL,Minneapolis MN,400
+Chicago IL,Memphis TN,560
+Chicago IL,Washington DC,700
+Chicago IL,San Francisco CA,2130
+Chicago IL,Las Vegas NV,1750
+Chicago IL,Atlanta GA,720
+Chicago IL,Denver CO,1000
+Chicago IL,Nashville TN,470
+Chicago IL,Portland OR,2120
+Houston TX,Phoenix AZ,1175
+Houston TX,Philadelphia PA,1550
+Houston TX,San Antonio TX,200
+Houston TX,San Diego CA,1370
+Houston TX,Dallas TX,240
+Houston TX,San Jose CA,1540
+Houston TX,Austin TX,160
+Houston TX,Jacksonville FL,800
+Houston TX,Fort Worth TX,250
+Houston TX,Columbus OH,1000
+Houston TX,Charlotte NC,1050
+Houston TX,Seattle WA,2340
+Houston TX,St Louis MO,780
+Houston TX,Detroit MI,1300
+Houston TX,Boston MA,1800
+Houston TX,Cleveland OH,1270
+Houston TX,New Orleans LA,350
+Houston TX,Minneapolis MN,1190
+Houston TX,Memphis TN,580
+Houston TX,Washington DC,1400
+Houston TX,San Francisco CA,1950
+Houston TX,Las Vegas NV,1450
+Houston TX,Atlanta GA,790
+Houston TX,Denver CO,1030
+Houston TX,Nashville TN,770
+Houston TX,Portland OR,2300
+Phoenix AZ,Philadelphia PA,2300
+Phoenix AZ,San Antonio TX,980
+Phoenix AZ,San Diego CA,355
+Phoenix AZ,Dallas TX,1060
+Phoenix AZ,San Jose CA,750
+Phoenix AZ,Austin TX,980
+Phoenix AZ,Jacksonville FL,2200
+Phoenix AZ,Fort Worth TX,1050
+Phoenix AZ,Columbus OH,1700
+Phoenix AZ,Charlotte NC,1850
+Phoenix AZ,Seattle WA,1450
+Phoenix AZ,St Louis MO,1450
+Phoenix AZ,Detroit MI,1980
+Phoenix AZ,Boston MA,2650
+Phoenix AZ,Cleveland OH,1900
+Phoenix AZ,New Orleans LA,1350
+Phoenix AZ,Minneapolis MN,1690
+Phoenix AZ,Memphis TN,1400
+Phoenix AZ,Washington DC,2300
+Phoenix AZ,San Francisco CA,750
+Phoenix AZ,Las Vegas NV,300
+Phoenix AZ,Atlanta GA,1850
+Phoenix AZ,Denver CO,650
+Phoenix AZ,Nashville TN,1650
+Phoenix AZ,Portland OR,1350
+Philadelphia PA,San Antonio TX,1500
+Philadelphia PA,San Diego CA,2700
+Philadelphia PA,Dallas TX,1350
+Philadelphia PA,San Jose CA,2900
+Philadelphia PA,Austin TX,1500
+Philadelphia PA,Jacksonville FL,850
+Philadelphia PA,Fort Worth TX,1400
+Philadelphia PA,Columbus OH,350
+Philadelphia PA,Charlotte NC,500
+Philadelphia PA,Seattle WA,2800
+Philadelphia PA,St Louis MO,900
+Philadelphia PA,Detroit MI,550
+Philadelphia PA,Boston MA,310
+Philadelphia PA,Cleveland OH,430
+Philadelphia PA,New Orleans LA,1200
+Philadelphia PA,Minneapolis MN,1150
+Philadelphia PA,Memphis TN,950
+Philadelphia PA,Washington DC,140
+Philadelphia PA,San Francisco CA,2900
+Philadelphia PA,Las Vegas NV,2400
+Philadelphia PA,Atlanta GA,750
+Philadelphia PA,Denver CO,1700
+Philadelphia PA,Nashville TN,700
+Philadelphia PA,Portland OR,2850
+San Antonio TX,San Diego CA,1300
+San Antonio TX,Dallas TX,275
+San Antonio TX,San Jose CA,1350
+San Antonio TX,Austin TX,80
+San Antonio TX,Jacksonville FL,1200
+San Antonio TX,Fort Worth TX,280
+San Antonio TX,Columbus OH,1200
+San Antonio TX,Charlotte NC,1350
+San Antonio TX,Seattle WA,2220
+San Antonio TX,St Louis MO,870
+San Antonio TX,Detroit MI,1380
+San Antonio TX,Boston MA,1900
+San Antonio TX,Cleveland OH,1350
+San Antonio TX,New Orleans LA,540
+San Antonio TX,Minneapolis MN,1240
+San Antonio TX,Memphis TN,670
+San Antonio TX,Washington DC,1600
+San Antonio TX,San Francisco CA,1750
+San Antonio TX,Las Vegas NV,1200
+San Antonio TX,Atlanta GA,990
+San Antonio TX,Denver CO,950
+San Antonio TX,Nashville TN,880
+San Antonio TX,Portland OR,2100
+San Diego CA,Dallas TX,1430
+San Diego CA,San Jose CA,460
+San Diego CA,Austin TX,1400
+San Diego CA,Jacksonville FL,2750
+San Diego CA,Fort Worth TX,1440
+San Diego CA,Columbus OH,2200
+San Diego CA,Charlotte NC,2450
+San Diego CA,Seattle WA,1250
+San Diego CA,St Louis MO,1940
+San Diego CA,Detroit MI,2390
+San Diego CA,Boston MA,3020
+San Diego CA,Cleveland OH,2440
+San Diego CA,New Orleans LA,1900
+San Diego CA,Minneapolis MN,2060
+San Diego CA,Memphis TN,1900
+San Diego CA,Washington DC,2700
+San Diego CA,San Francisco CA,500
+San Diego CA,Las Vegas NV,330
+San Diego CA,Atlanta GA,2200
+San Diego CA,Denver CO,1080
+San Diego CA,Nashville TN,2090
+San Diego CA,Portland OR,1080
+Dallas TX,San Jose CA,1470
+Dallas TX,Austin TX,195
+Dallas TX,Jacksonville FL,1300
+Dallas TX,Fort Worth TX,30
+Dallas TX,Columbus OH,950
+Dallas TX,Charlotte NC,1100
+Dallas TX,Seattle WA,2200
+Dallas TX,St Louis MO,630
+Dallas TX,Detroit MI,1150
+Dallas TX,Boston MA,1750
+Dallas TX,Cleveland OH,1200
+Dallas TX,New Orleans LA,500
+Dallas TX,Minneapolis MN,950
+Dallas TX,Memphis TN,450
+Dallas TX,Washington DC,1350
+Dallas TX,San Francisco CA,1800
+Dallas TX,Las Vegas NV,1200
+Dallas TX,Atlanta GA,800
+Dallas TX,Denver CO,780
+Dallas TX,Nashville TN,670
+Dallas TX,Portland OR,2150
+San Jose CA,Austin TX,1600
+San Jose CA,Jacksonville FL,2800
+San Jose CA,Fort Worth TX,1550
+San Jose CA,Columbus OH,2000
+San Jose CA,Charlotte NC,2450
+San Jose CA,Seattle WA,850
+San Jose CA,St Louis MO,2000
+San Jose CA,Detroit MI,2400
+San Jose CA,Boston MA,3100
+San Jose CA,Cleveland OH,2450
+San Jose CA,New Orleans LA,2100
+San Jose CA,Minneapolis MN,2000
+San Jose CA,Memphis TN,2050
+San Jose CA,Washington DC,2850
+San Jose CA,San Francisco CA,50
+San Jose CA,Las Vegas NV,550
+San Jose CA,Atlanta GA,2400
+San Jose CA,Denver CO,1200
+San Jose CA,Nashville TN,2200
+San Jose CA,Portland OR,650
+Austin TX,Jacksonville FL,1200
+Austin TX,Fort Worth TX,200
+Austin TX,Columbus OH,1050
+Austin TX,Charlotte NC,1150
+Austin TX,Seattle WA,2200
+Austin TX,St Louis MO,820
+Austin TX,Detroit MI,1320
+Austin TX,Boston MA,1850
+Austin TX,Cleveland OH,1300
+Austin TX,New Orleans LA,510
+Austin TX,Minneapolis MN,1180
+Austin TX,Memphis TN,650
+Austin TX,Washington DC,1550
+Austin TX,San Francisco CA,1700
+Austin TX,Las Vegas NV,1350
+Austin TX,Atlanta GA,930
+Austin TX,Denver CO,900
+Austin TX,Nashville TN,830
+Austin TX,Portland OR,2050
+Jacksonville FL,Fort Worth TX,980
+Jacksonville FL,Columbus OH,750
+Jacksonville FL,Charlotte NC,360
+Jacksonville FL,Seattle WA,2950
+Jacksonville FL,St Louis MO,920
+Jacksonville FL,Detroit MI,1050
+Jacksonville FL,Boston MA,1200
+Jacksonville FL,Cleveland OH,900
+Jacksonville FL,New Orleans LA,550
+Jacksonville FL,Minneapolis MN,1400
+Jacksonville FL,Memphis TN,700
+Jacksonville FL,Washington DC,800
+Jacksonville FL,San Francisco CA,2850
+Jacksonville FL,Las Vegas NV,2350
+Jacksonville FL,Atlanta GA,350
+Jacksonville FL,Denver CO,1800
+Jacksonville FL,Nashville TN,600
+Jacksonville FL,Portland OR,2950
+Fort Worth TX,Columbus OH,1000
+Fort Worth TX,Charlotte NC,1050
+Fort Worth TX,Seattle WA,2170
+Fort Worth TX,St Louis MO,650
+Fort Worth TX,Detroit MI,1170
+Fort Worth TX,Boston MA,1775
+Fort Worth TX,Cleveland OH,1225
+Fort Worth TX,New Orleans LA,520
+Fort Worth TX,Minneapolis MN,975
+Fort Worth TX,Memphis TN,460
+Fort Worth TX,Washington DC,1375
+Fort Worth TX,San Francisco CA,1825
+Fort Worth TX,Las Vegas NV,1225
+Fort Worth TX,Atlanta GA,825
+Fort Worth TX,Denver CO,800
+Fort Worth TX,Nashville TN,695
+Fort Worth TX,Portland OR,2175
+Columbus OH,Charlotte NC,450
+Columbus OH,Seattle WA,2400
+Columbus OH,St Louis MO,480
+Columbus OH,Detroit MI,200
+Columbus OH,Boston MA,750
+Columbus OH,Cleveland OH,150
+Columbus OH,New Orleans LA,850
+Columbus OH,Minneapolis MN,750
+Columbus OH,Memphis TN,580
+Columbus OH,Washington DC,400
+Columbus OH,San Francisco CA,2450
+Columbus OH,Las Vegas NV,2000
+Columbus OH,Atlanta GA,550
+Columbus OH,Denver CO,1400
+Columbus OH,Nashville TN,400
+Columbus OH,Portland OR,2450
+Charlotte NC,Seattle WA,2820
+Charlotte NC,St Louis MO,650
+Charlotte NC,Detroit MI,700
+Charlotte NC,Boston MA,870
+Charlotte NC,Cleveland OH,550
+Charlotte NC,New Orleans LA,720
+Charlotte NC,Minneapolis MN,1100
+Charlotte NC,Memphis TN,600
+Charlotte NC,Washington DC,400
+Charlotte NC,San Francisco CA,2800
+Charlotte NC,Las Vegas NV,2250
+Charlotte NC,Atlanta GA,240
+Charlotte NC,Denver CO,1600
+Charlotte NC,Nashville TN,400
+Charlotte NC,Portland OR,2850
+Seattle WA,St Louis MO,2070
+Seattle WA,Detroit MI,2300
+Seattle WA,Boston MA,3000
+Seattle WA,Cleveland OH,2350
+Seattle WA,New Orleans LA,2650
+Seattle WA,Minneapolis MN,1650
+Seattle WA,Memphis TN,2300
+Seattle WA,Washington DC,2750
+Seattle WA,San Francisco CA,800
+Seattle WA,Las Vegas NV,1130
+Seattle WA,Atlanta GA,2650
+Seattle WA,Denver CO,1300
+Seattle WA,Nashville TN,2400
+Seattle WA,Portland OR,170
+St Louis MO,Detroit MI,520
+St Louis MO,Boston MA,1160
+St Louis MO,Cleveland OH,550
+St Louis MO,New Orleans LA,680
+St Louis MO,Minneapolis MN,550
+St Louis MO,Memphis TN,280
+St Louis MO,Washington DC,850
+St Louis MO,San Francisco CA,2150
+St Louis MO,Las Vegas NV,1600
+St Louis MO,Atlanta GA,550
+St Louis MO,Denver CO,850
+St Louis MO,Nashville TN,310
+St Louis MO,Portland OR,2100
+Detroit MI,Boston MA,700
+Detroit MI,Cleveland OH,170
+Detroit MI,New Orleans LA,1050
+Detroit MI,Minneapolis MN,700
+Detroit MI,Memphis TN,770
+Detroit MI,Washington DC,500
+Detroit MI,San Francisco CA,2450
+Detroit MI,Las Vegas NV,2200
+Detroit MI,Atlanta GA,750
+Detroit MI,Denver CO,1300
+Detroit MI,Nashville TN,560
+Detroit MI,Portland OR,2400
+Boston MA,Cleveland OH,640
+Boston MA,New Orleans LA,1500
+Boston MA,Minneapolis MN,1400
+Boston MA,Memphis TN,1300
+Boston MA,Washington DC,440
+Boston MA,San Francisco CA,3100
+Boston MA,Las Vegas NV,2700
+Boston MA,Atlanta GA,1050
+Boston MA,Denver CO,1950
+Boston MA,Nashville TN,1100
+Boston MA,Portland OR,3100
+Cleveland OH,New Orleans LA,950
+Cleveland OH,Minneapolis MN,750
+Cleveland OH,Memphis TN,750
+Cleveland OH,Washington DC,350
+Cleveland OH,San Francisco CA,2500
+Cleveland OH,Las Vegas NV,2150
+Cleveland OH,Atlanta GA,700
+Cleveland OH,Denver CO,1450
+Cleveland OH,Nashville TN,550
+Cleveland OH,Portland OR,2450
+New Orleans LA,Minneapolis MN,1150
+New Orleans LA,Memphis TN,400
+New Orleans LA,Washington DC,1100
+New Orleans LA,San Francisco CA,2250
+New Orleans LA,Las Vegas NV,1800
+New Orleans LA,Atlanta GA,470
+New Orleans LA,Denver CO,1300
+New Orleans LA,Nashville TN,550
+New Orleans LA,Portland OR,2600
+Minneapolis MN,Memphis TN,800
+Minneapolis MN,Washington DC,1130
+Minneapolis MN,San Francisco CA,2000
+Minneapolis MN,Las Vegas NV,1760
+Minneapolis MN,Atlanta GA,1000
+Minneapolis MN,Denver CO,900
+Minneapolis MN,Nashville TN,850
+Minneapolis MN,Portland OR,1750
+Memphis TN,Washington DC,900
+Memphis TN,San Francisco CA,2200
+Memphis TN,Las Vegas NV,1650
+Memphis TN,Atlanta GA,380
+Memphis TN,Denver CO,1150
+Memphis TN,Nashville TN,200
+Memphis TN,Portland OR,2300
+Washington DC,San Francisco CA,2850
+Washington DC,Las Vegas NV,2400
+Washington DC,Atlanta GA,640
+Washington DC,Denver CO,1700
+Washington DC,Nashville TN,700
+Washington DC,Portland OR,2850
+San Francisco CA,Las Vegas NV,570
+San Francisco CA,Atlanta GA,2450
+San Francisco CA,Denver CO,1250
+San Francisco CA,Nashville TN,2300
+San Francisco CA,Portland OR,650
+Las Vegas NV,Atlanta GA,2000
+Las Vegas NV,Denver CO,750
+Las Vegas NV,Nashville TN,1900
+Las Vegas NV,Portland OR,950
+Atlanta GA,Denver CO,1400
+Atlanta GA,Nashville TN,250
+Atlanta GA,Portland OR,2650
+Denver CO,Nashville TN,1140
+Denver CO,Portland OR,1250
+Nashville TN,Portland OR,2400 
