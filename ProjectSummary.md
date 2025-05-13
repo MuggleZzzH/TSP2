@@ -1,188 +1,132 @@
-# 项目结构摘要
+# Codebase File Summary
 
-本文档总结了为旅行计划应用程序创建的 Java 类。
+本文件旨在解释 Trip Planner 应用程序中每个主要 Java 文件的用途和职责。
 
-## 1. 模型类 (Model Classes)
+## com.cpt204.finalproject (根包)
 
-这些类代表了应用程序的核心数据实体。
+### `Main.java`
 
-### `com.cpt204.finalproject.model.City`
+*   **用途:** 应用程序的**主入口点**。
+*   **职责:**
+    1.  初始化数据加载组件 (`CsvDataLoader`)。
+    2.  调用数据加载器加载地图和景点数据 (`RoadNetwork`)。
+    3.  初始化所有需要的服务实例 (`DijkstraPathfindingService`, `PermutationPoiOptimizerService`, `DynamicProgrammingPoiOptimizerService`, `TripPlanningService`)。
+    4.  初始化用户界面交互组件 (`ConsoleController`)。
+    5.  将服务依赖注入到需要它们的组件中（例如，将 `TripPlanningService` 注入 `ConsoleController`）。
+    6.  启动用户交互流程（调用 `consoleController.run()`)。
+    7.  打印最终的“应用程序结束”消息。
+*   **是否必须:** **是**。作为应用程序的起点和组装器。
 
-* **目的**: 代表道路网络中的一个城市。
-* **关键属性**:
-    * `name` (String): 城市的唯一名称。
-* **关键方法**:
-    * 构造函数 `City(String name)`
-    * `getName()`
-    * `equals()`, `hashCode()`, `toString()`
+## com.cpt204.finalproject.model
 
-### `com.cpt204.finalproject.model.Road`
+### `City.java`
 
-* **目的**: 代表连接两个城市的有向道路段。
-* **关键属性**:
-    * `source` (City): 道路的起始城市。
-    * `destination` (City): 道路的结束城市。
-    * `distance` (double): 道路的长度/距离。
-* **关键方法**:
-    * 构造函数 `Road(City source, City destination, double distance)`
-    * `getSource()`, `getDestination()`, `getDistance()`
-    * `equals()`, `hashCode()`, `toString()`
+*   **用途:** 定义**城市**的数据模型。
+*   **职责:** 存储一个城市的基本属性，如名称 (`name`)、州/省 (`state`) 以及地理坐标 (`latitude`, `longitude`)。包含构造函数、getter 方法以及必要的 `equals` 和 `hashCode` 方法，以便在集合（如 Map 的键）中正确使用。
+*   **是否必须:** **是**。应用程序处理的核心对象之一。
 
-### `com.cpt204.finalproject.model.Attraction`
+### `Road.java`
 
-* **目的**: 代表位于某个城市内的景点 (Attraction)。
-* **关键属性**:
-    * `attractionName` (String): 景点的名称。
-    * `cityName` (String): 景点所在城市的名称。
-* **关键方法**:
-    * 构造函数 `Attraction(String attractionName, String cityName)`
-    * `getAttractionName()`, `getCityName()`
-    * `equals()`, `hashCode()`, `toString()`
+*   **用途:** 定义**道路**的数据模型。
+*   **职责:** 表示两个城市 (`source`, `destination`) 之间的**直接**连接及其距离 (`distance`)。主要在数据加载时使用，用于构建 `RoadNetwork`。
+*   **是否必须:** **是**。用于从 CSV 加载数据并构建初始网络（即使内部使用矩阵，加载时仍可能通过 Road 对象）。
 
-### `com.cpt204.finalproject.model.RoadNetwork`
+### `Attraction.java`
 
-* **目的**: 代表整个道路网络，包含城市、道路和景点。
-* **关键属性**:
-    * `citiesByName` (Map<String, City>): 按名称快速查找城市的映射。
-    * `adjacencyList` (Map<City, List<Road>>): 将每个城市映射到其出站道路的邻接列表。
-    * `attractionsByCity` (Map<String, List<Attraction>>): 将城市名称映射到其景点的映射。
-* **关键方法**:
-    * 构造函数 `RoadNetwork(Collection<City> cities, Collection<Road> roads, Collection<Attraction> attractions)`
-    * `getCityByName(String name)`
-    * `getAllCities()`
-    * `getRoadsFrom(City city)`
-    * `getNumberOfCities()`
-    * `getAttractionsInCity(String cityName)`
-    * `getAllAttractions()`
+*   **用途:** 定义**景点**的数据模型。
+*   **职责:** 存储一个景点的名称 (`attractionName`)、所在的城市名称 (`cityName`) 以及地理坐标 (`latitude`, `longitude`)。
+*   **是否必须:** **是**。应用程序需要处理和规划包含景点的路线。
 
-## 2. 数据加载类 (DataLoader Classes)
+### `RoadNetwork.java`
 
-此类负责将数据加载到模型对象中。
+*   **用途:** 封装整个**路网数据结构**。
+*   **职责:**
+    1.  存储所有 `City` 对象和 `Attraction` 对象。
+    2.  使用二维数组 (`distanceMatrix`) 存储城市间的**直接**距离（针对邻接矩阵优化）。
+    3.  提供通过名称 (`getCityByName`) 或索引查找城市的方法。
+    4.  提供获取所有城市 (`getAllCities`) 和所有景点 (`getAllAttractions`, `getAttractionsInCity`) 的方法。
+    5.  提供获取两个城市间直接距离 (`getDirectDistance`) 的方法。
+    6.  提供动态生成从某个城市出发的所有 `Road` 对象 (`getRoadsFrom`) 的方法（供 Dijkstra 使用）。
+*   **是否必须:** **是**。作为所有地理和连接数据的中心存储库。
 
-### `com.cpt204.finalproject.dataloader.CsvDataLoader`
+## com.cpt204.finalproject.repository (原 dataloader)
 
-* **目的**: 从类路径下的 CSV 文件加载城市、道路和景点数据。
-* **关键方法**:
-    * `loadData(String roadsCsvPath, String attractionsCsvPath)`: 加载数据并返回一个 `RoadNetwork` 对象。
-    * 私有帮助方法 `loadAttractions(...)` 和 `loadRoads(...)`。
-* **假设**:
-    * 道路被视为双向的，除非 CSV 数据另有指示（当前实现会添加双向道路）。
-    * 期望 CSV 文件包含头部行。
+### `CsvDataLoader.java`
 
-## 3. 服务接口 (Service Interfaces)
+*   **用途:** 负责从 **CSV 文件加载数据**。
+*   **职责:**
+    1.  读取 `roads.csv` 和 `attractions.csv` 文件。
+    2.  解析文件内容。
+    3.  创建 `City`, `Road`, `Attraction` 对象。
+    4.  使用加载的对象构建并返回一个 `RoadNetwork` 实例。
+    5.  将数据加载逻辑与应用程序的其他部分分离。
+*   **是否必须:** **是**。为应用程序提供初始数据。
 
-这些接口定义了核心应用程序服务的契约。
+## com.cpt204.finalproject.services
 
-### `com.cpt204.finalproject.services.PathfindingService`
+### `PathfindingService.java`
 
-* **目的**: 定义用于查找城市之间路径的服务的契约。
-* **关键方法**:
-    * `findShortestPath(RoadNetwork roadNetwork, City startCity, City endCity, List<Attraction> attractionsToVisit, boolean useTimeout, long timeoutMillis)`: 查找最短路径。
-* **内部类 `PathResult`**:
-    * 封装路径查找操作的结果。
-    * 属性: `path` (List<City>)，`totalDistance` (double)，`calculationTimeMillis` (long)，`timedOut` (boolean)，`algorithmName` (String)。
-    * 静态工厂方法: `timedOut(...)`, `empty(...)`。
+*   **用途:** 定义**路径查找服务**的**接口**（契约）。
+*   **职责:** 规定了任何路径查找实现都必须提供 `findShortestPath` 方法。同时定义了内部类 `PathResult` 作为该方法的标准返回类型，封装了路径、距离、时间和状态。
+*   **是否必须:** **是**（作为接口）。定义清晰的服务契约是良好设计的体现，便于未来替换或添加其他寻路算法。
 
-### `com.cpt204.finalproject.services.PoiOptimizerService`
+### `DijkstraPathfindingService.java`
 
-* **目的**: 定义用于优化景点 (POI) 访问顺序的服务的契约。
-* **关键方法**:
-    * `findBestPoiOrder(RoadNetwork roadNetwork, City startCity, City endCity, List<City> poisToVisit, boolean useTimeout, long timeoutMillis)`: 查找访问 POI 的最佳顺序。
-* **内部类 `OptimizerResult`**:
-    * 封装 POI 优化操作的结果。
-    * 属性: `bestOrder` (List<City>)，`totalDistance` (double)，`calculationTimeMillis` (long)，`timedOut` (boolean)，`algorithmName` (String)。
-    * 静态工厂方法: `timedOut(...)`, `empty(...)`。
+*   **用途:** `PathfindingService` 接口的**具体实现**，使用 Dijkstra 算法。
+*   **职责:** 根据给定的 `RoadNetwork`、起点和终点，**实时计算**它们之间的最短路径和距离。它在需要时被 POI 优化器和 `TripPlanningService` 调用。
+*   **是否必须:** **是**。这是当前应用程序实际使用的寻路算法。
 
-## 4. 服务实现类 (Service Implementations)
+### `PoiOptimizerService.java`
 
-这些类提供了服务接口的具体实现。
+*   **用途:** 定义 **POI 顺序优化服务**的**接口**（契约）。
+*   **职责:** 规定了任何 POI 优化实现都必须提供 `findBestPoiOrder` 方法。定义了内部类 `OptimizerResult` 作为该方法的标准返回类型，封装了最佳 POI 顺序、总距离、时间和状态。
+*   **是否必须:** **是**（作为接口）。定义清晰的服务契约。
 
-### `com.cpt204.finalproject.services.DijkstraPathfindingService`
+### `PermutationPoiOptimizerService.java`
 
-* **目的**: 使用 Dijkstra 算法实现 `PathfindingService`。
-* **关键特性**:
-    * 计算两个城市之间的最短路径。
-    * 目前不处理中间的 `attractionsToVisit` 或处理 Dijkstra 算法本身的 `useTimeout`。
-* **算法**: Dijkstra。
+*   **用途:** `PoiOptimizerService` 接口的一个**实现**，使用**排列组合（暴力）**算法。
+*   **职责:** 计算所有可能的 POI 访问顺序，并为每种顺序计算总距离（通过调用 `PathfindingService` 获取段距离），最终找出距离最短的顺序。适用于 POI 数量较少的情况（由 `TripPlanningService` 中的阈值决定）。
+*   **是否必须:** **是**。因为 `TripPlanningService` 会根据 POI 数量选择性地使用它。
 
-### `com.cpt204.finalproject.services.PermutationPoiOptimizerService`
+### `DynamicProgrammingPoiOptimizerService.java`
 
-* **目的**: 使用暴力排列方法实现 `PoiOptimizerService`。
-* **关键特性**:
-    * 生成所有可能的 POI 排列，以找到最佳顺序。
-    * 依赖于注入的 `PathfindingService` 来计算路段距离。
-    * 支持超时功能。
-    * 计算成本高 (O(N!))，适用于 POI 数量非常少的情况。
-* **算法**: 排列 (Heap 算法) + 分段路径查找。
+*   **用途:** `PoiOptimizerService` 接口的另一个**实现**，使用**动态规划**（类 Held-Karp）算法。
+*   **职责:** 使用 DP 状态表来计算访问所有给定 POI 的最短路径顺序。比排列组合更有效，适用于 POI 数量较多的情况。它也依赖 `PathfindingService` 来获取计算状态转移所需的段距离（并包含一个内部缓存以避免重复调用）。
+*   **是否必须:** **是**。因为 `TripPlanningService` 会根据 POI 数量选择性地使用它。
 
-### `com.cpt204.finalproject.services.DynamicProgrammingPoiOptimizerService`
+### `TripPlanningService.java`
 
-* **目的**: 使用动态规划方法（Held-Karp 变体）实现 `PoiOptimizerService`。
-* **关键特性**:
-    * 使用位掩码 (bitmasking) 和 DP 表来查找最优 POI 顺序。
-    * 依赖于注入的 `PathfindingService`。
-    * 包含城市间距离的缓存，以避免重复计算。
-    * 支持超时功能。
-    * 比排列方法更高效 (O(N^2 * 2^N))，适用于中等数量的 POI。
-* **算法**: 动态规划 (Held-Karp 变体) + 带缓存的分段路径查找。
+*   **用途:** **高级服务**，负责**协调整个行程规划流程**。
+*   **职责:**
+    1.  接收起点、终点和景点名称列表。
+    2.  验证输入，将景点名称转换为 `City` 对象列表。
+    3.  根据 POI 数量选择合适的 `PoiOptimizerService`（排列或 DP）。
+    4.  调用优化器获取最佳 POI 顺序和估计的总距离。
+    5.  使用 `PathfindingService` 计算最终路径中每个连续停靠点之间的详细路径段。
+    6.  组装所有信息（完整路径、总距离、时间、状态等）到 `TripPlan` 对象中并返回。
+*   **是否必须:** **是**。封装了端到端的行程规划业务逻辑。
 
-## 5. Data Transfer Objects (DTOs)
+## com.cpt204.finalproject.dto (Data Transfer Object)
 
-这些类是用于传输数据，通常是服务操作的最终结果。
+### `TripPlan.java`
 
-### `com.cpt204.finalproject.dto.TripPlan`
+*   **用途:** 定义用于**传输最终行程规划结果**的数据结构。
+*   **职责:** 封装一次成功或失败的行程规划的所有相关信息，包括最终路径、总距离、优化和寻路时间、使用的算法、状态消息等。它在 `TripPlanningService` 和 `ConsoleController` 之间传递数据。
+*   **是否必须:** **是**。提供了一个清晰、标准的结构来返回规划结果。
 
-* **目的**: 代表一次旅行规划请求的最终结果。
-* **关键属性**:
-    * `fullPath` (List<City>): 包含起点、所有优化后的POI顺序以及终点的完整城市列表。
-    * `detailedSegments` (List<PathfindingService.PathResult>): (可选)每个路段的详细路径信息。
-    * `totalDistance` (double): 整个行程的总距离。
-    * `poiOptimizationTimeMillis` (long): POI优化步骤花费的时间。
-    * `totalPathfindingTimeMillis` (long): 所有路段路径查找花费的总时间。
-    * `poiOptimizerAlgorithmName` (String): 使用的POI优化算法名称。
-    * `pathfindingAlgorithmName` (String): 使用的路径查找算法名称。
-    * `optimizerTimedOut` (boolean): POI优化步骤是否超时。
-    * `pathfinderTimedOut` (boolean): 是否有任何路段的路径查找超时。
-    * `statusMessage` (String): 描述规划结果状态的消息（如 "Success", "Optimizer timed out"）。
-* **关键方法**:
-    * 构造函数 `TripPlan(...)`
-    * `Getters` for all attributes.
-    * `toString()`: 用于打印计划摘要。
-    * `static failure(String message)`: 用于创建表示失败的计划的工厂方法。
+## com.cpt204.finalproject.controller
 
-## 6. Orchestration Services
+### `ConsoleController.java`
 
-这些服务协调低级别服务以执行复杂操作。
+*   **用途:** 处理**控制台的用户交互**。
+*   **职责:**
+    1.  向用户显示提示信息（输入起点、终点、POI）。
+    2.  使用 `Scanner` 读取用户的输入。
+    3.  调用 `TripPlanningService` 的 `planTrip` 方法来执行规划请求。
+    4.  获取返回的 `TripPlan` 对象。
+    5.  将 `TripPlan` 对象的内容格式化并打印到控制台。
+*   **是否必须:** **是**。负责将命令行用户界面与后端服务逻辑连接起来。
 
-### `com.cpt204.finalproject.services.TripPlanningService`
+## 总结：是否有无用文件？
 
-* **目的**: 高级别服务，负责协调整个旅行规划流程。
-* **关键依赖**:
-    * `RoadNetwork`: 包含地图数据。
-    * `PathfindingService`: 用于计算两点间路径。
-    * `PermutationPoiOptimizerService`: 用于少量POI的优化。
-    * `DynamicProgrammingPoiOptimizerService`: 用于较多POI的优化。
-* **关键方法**:
-    * `planTrip(String startCityName, String endCityName, List<String> attractionNames, boolean useTimeout, long timeoutMillis)`: 主要的规划方法。
-* **核心逻辑**:
-    1. 验证输入城市和景点名称。
-    2. 将景点名称转换为POI城市列表。
-    3. 根据POI数量选择合适的优化器 (排列或DP)。
-    4. 调用POI优化器获取最佳POI访问顺序。
-    5. 根据优化后的顺序，使用路径查找服务计算并拼接各路段的路径。
-    6. 封装所有信息到 `TripPlan` 对象并返回。
-    * 处理超时和错误情况。
-
-## 7. Application Entry Point
-
-### `com.cpt204.finalproject.Main`
-
-* **目的**: 应用程序的主入口点，用于演示服务的使用。
-* **核心逻辑**:
-    1. 初始化 `CsvDataLoader` 并加载路网数据。
-    2. 初始化 `PathfindingService` 和 `PoiOptimizerService` 的具体实现。
-    3. 初始化 `TripPlanningService`。
-    4. 定义示例行程参数 (起点、终点、景点)。
-    5. 调用 `tripPlanningService.planTrip(...)` 来获取行程计划。
-    6. 打印 `TripPlan` 结果。
-* **注意**: 需要确保CSV数据文件位于 `src/main/resources/data/` 目录下。
+根据上述分析，在您当前项目的结构和功能下，**所有这些 `.java` 文件都有其特定的用途，并且都被直接或间接地使用，目前没有发现明显无用的文件。** 它们共同构成了一个分层良好、职责清晰的应用程序。
