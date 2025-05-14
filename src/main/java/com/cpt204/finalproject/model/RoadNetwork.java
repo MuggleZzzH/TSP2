@@ -3,8 +3,10 @@ package com.cpt204.finalproject.model;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.ArrayList;
 import java.util.Arrays; // Added for Arrays.fill
 
@@ -18,7 +20,7 @@ public class RoadNetwork {
     private final Map<City, Integer> cityToIndex; // Map city object to its matrix index
     private final double[][] distanceMatrix; // Stores direct distances between cities
     // Adjacency list is removed
-    private final Map<String, List<Attraction>> attractionsByCity;
+    private final Map<String, Set<Attraction>> attractionsByCity;
 
     /**
      * Constructs a RoadNetwork using an adjacency matrix approach.
@@ -64,7 +66,7 @@ public class RoadNetwork {
         if (allAttractions != null) {
              for (Attraction attraction : allAttractions) {
                  if (attraction != null && this.citiesByName.containsKey(attraction.getCityName())) {
-                      this.attractionsByCity.computeIfAbsent(attraction.getCityName(), k -> new ArrayList<>()).add(attraction);
+                      this.attractionsByCity.computeIfAbsent(attraction.getCityName(), k -> new HashSet<>()).add(attraction);
                  } else if (attraction != null) {
                       System.err.println("Warning: Skipping attraction due to unknown city: " + attraction);
                  }
@@ -200,10 +202,19 @@ public class RoadNetwork {
     /**
      * Gets attractions for a specific city.
      * @param cityName The name of the city.
-     * @return An unmodifiable list of attractions in that city, or an empty list if none or city not found.
+     * @return An unmodifiable set of attractions in the specified city, or an empty set if the city
+     *         is not found or has no attractions. The search is case-insensitive.
      */
-    public List<Attraction> getAttractionsInCity(String cityName) {
-        return Collections.unmodifiableList(attractionsByCity.getOrDefault(cityName, Collections.emptyList()));
+    public Set<Attraction> getAttractionsInCity(String cityName) {
+        if (cityName == null) {
+            return Collections.emptySet();
+        }
+        String normalizedCityName = cityName.toLowerCase().trim();
+        Set<Attraction> cityAttractions = attractionsByCity.get(normalizedCityName);
+        if (cityAttractions == null) {
+            cityAttractions = attractionsByCity.get(cityName);
+        }
+        return cityAttractions != null ? Collections.unmodifiableSet(cityAttractions) : Collections.emptySet();
     }
 
     /**
@@ -211,10 +222,10 @@ public class RoadNetwork {
      * @return An unmodifiable collection of all attractions.
      */
      public Collection<Attraction> getAllAttractions() {
-         List<Attraction> all = new ArrayList<>();
-         for(List<Attraction> cityAttractions : attractionsByCity.values()){
+         Set<Attraction> all = new HashSet<>();
+         for(Set<Attraction> cityAttractions : attractionsByCity.values()){
              all.addAll(cityAttractions);
          }
-         return Collections.unmodifiableCollection(all);
+         return Collections.unmodifiableSet(all);
      }
 } 

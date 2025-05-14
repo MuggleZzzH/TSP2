@@ -8,7 +8,7 @@ import com.cpt204.finalproject.services.*;
 
 
 public class Main {
-
+    
     public static void main(String[] args) {
         System.out.println("Initializing Trip Planner Application...");
 
