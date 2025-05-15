@@ -122,7 +122,7 @@ public class RoadNetwork {
      * @param city The city object.
      * @return The index of the city, or null if not found.
      */
-    public Integer getIndexByCity(City city) {
+    public Integer getCityIndex(City city) {
         return cityToIndex.get(city);
     }
 

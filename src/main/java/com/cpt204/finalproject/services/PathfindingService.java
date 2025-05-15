@@ -36,17 +36,26 @@ public interface PathfindingService {
     // For example: list of cities in path, total distance, calculation time, whether timeout occurred.
     class PathResult {
         private final List<City> path;
-        private final double totalDistance;
+        private final double totalDistance; // Distance to the specific destination city
+        private final double[] distArray; // Distances from source to all other cities in the network
         private final double calculationTimeMillis;
         private final boolean timedOut;
         private final String algorithmName;
 
-        public PathResult(List<City> path, double totalDistance, double calculationTimeMillis, boolean timedOut, String algorithmName) {
+        // Updated constructor to include distArray
+        public PathResult(List<City> path, double totalDistance, double[] distArray, double calculationTimeMillis, boolean timedOut, String algorithmName) {
             this.path = path;
             this.totalDistance = totalDistance;
+            this.distArray = distArray; // Can be null if not computed or not applicable
             this.calculationTimeMillis = calculationTimeMillis;
             this.timedOut = timedOut;
             this.algorithmName = algorithmName;
+        }
+
+        // Constructor for services that might not compute the full distArray (e.g., if only target distance is needed)
+        // Or if PathResult is used by optimizers that only care about a single distance value from a precomputed matrix
+        public PathResult(List<City> path, double totalDistance, double calculationTimeMillis, boolean timedOut, String algorithmName) {
+            this(path, totalDistance, null, calculationTimeMillis, timedOut, algorithmName); // Pass null for distArray
         }
 
         public List<City> getPath() {
@@ -55,6 +64,11 @@ public interface PathfindingService {
 
         public double getTotalDistance() {
             return totalDistance;
+        }
+
+        // Getter for the distance array
+        public double[] getDistArray() {
+            return distArray;
         }
 
         public double getCalculationTimeMillis() {
@@ -70,11 +84,12 @@ public interface PathfindingService {
         }
 
         public static PathResult timedOut(String algorithmName, double calculationTimeMillis) {
-            return new PathResult(List.of(), Double.POSITIVE_INFINITY, calculationTimeMillis, true, algorithmName);
+            // For timedOut, distArray can be null or an array of infinities
+            return new PathResult(List.of(), Double.POSITIVE_INFINITY, null, calculationTimeMillis, true, algorithmName);
         }
         
         public static PathResult empty(String algorithmName) {
-            return new PathResult(List.of(), Double.POSITIVE_INFINITY, 0.0, false, algorithmName);
+            return new PathResult(List.of(), Double.POSITIVE_INFINITY, null, 0.0, false, algorithmName);
         }
 
         @Override
@@ -82,6 +97,7 @@ public interface PathfindingService {
             return "PathResult{" +
                    "path=" + path +
                    ", totalDistance=" + totalDistance +
+                   ", distArray=" + java.util.Arrays.toString(distArray) +
                    ", calculationTimeMillis=" + calculationTimeMillis +
                    ", timedOut=" + timedOut +
                    ", algorithmName='" + algorithmName + '\'' +

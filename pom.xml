@@ -15,10 +15,23 @@
         <!-- Set Encoding -->
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <javafx.version>17.0.10</javafx.version>
     </properties>
 
     <dependencies>
-        <!-- Add dependencies here if needed in the future -->
+        <!-- JavaFX Controls -->
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-controls</artifactId>
+            <version>${javafx.version}</version>
+        </dependency>
+        <!-- JavaFX FXML -->
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-fxml</artifactId>
+            <version>${javafx.version}</version>
+        </dependency>
+        <!-- Add other dependencies here if needed in the future -->
         <!-- Example: 
         <dependency>
             <groupId>org.junit.jupiter</groupId>
@@ -49,10 +62,20 @@
                  <artifactId>exec-maven-plugin</artifactId>
                  <version>3.1.0</version> 
                  <configuration>
-                     <mainClass>com.cpt204.finalproject.Main</mainClass>
+                     <mainClass>com.cpt204.finalproject.ui.TripPlannerApp</mainClass>
                  </configuration>
              </plugin>
              
+            <!-- JavaFX Maven Plugin -->
+            <plugin>
+                <groupId>org.openjfx</groupId>
+                <artifactId>javafx-maven-plugin</artifactId>
+                <version>0.0.8</version> <!-- Use a recent compatible version -->
+                <configuration>
+                    <mainClass>com.cpt204.finalproject.ui.TripPlannerApp</mainClass>
+                </configuration>
+            </plugin>
+            
             <!-- Optional: Maven JAR Plugin to create an executable JAR -->
             <!-- 
             <plugin>

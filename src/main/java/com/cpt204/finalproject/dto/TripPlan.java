@@ -5,6 +5,8 @@ import com.cpt204.finalproject.services.PathfindingService;
 import com.cpt204.finalproject.services.PoiOptimizerService;
 
 import java.util.List;
+import java.util.Collections;
+import java.util.ArrayList;
 
 /**
  * Represents the final result of a trip planning request.
@@ -16,34 +18,61 @@ public class TripPlan {
     private final List<City> fullPath;
     private final List<PathfindingService.PathResult> detailedSegments; // Optional: details for each leg
     private final double totalDistance;
-    private final long poiOptimizationTimeMillis;
-    private final double totalPathfindingTimeMillis; // Changed to double
-    private final String poiOptimizerAlgorithmName;
-    private final String pathfindingAlgorithmName;
+    private final double poiOptimizationTimeMillis;
+    private final double pathfindingTimeMillis;
+    private final String optimizerAlgorithmName;
+    private final String pathfinderAlgorithmName;
     private final boolean optimizerTimedOut;
     private final boolean pathfinderTimedOut; // Indicates if any segment pathfinding timed out
-    private final String statusMessage;
+    private final String status;
 
     // Constructor (consider using a Builder pattern for more complex objects)
     public TripPlan(List<City> fullPath, List<PathfindingService.PathResult> detailedSegments,
-                    double totalDistance, long poiOptimizationTimeMillis, double totalPathfindingTimeMillis, // Changed to double
-                    String poiOptimizerAlgorithmName, String pathfindingAlgorithmName, 
-                    boolean optimizerTimedOut, boolean pathfinderTimedOut, String statusMessage) {
-        this.fullPath = fullPath;
-        this.detailedSegments = detailedSegments;
+                    double totalDistance, double poiOptimizationTimeMillis, double pathfindingTimeMillis, // Corrected parameter name
+                    String optimizerAlgorithmName, String pathfinderAlgorithmName,
+                    boolean optimizerTimedOut, boolean pathfinderTimedOut, String status) {
+        this.fullPath = Collections.unmodifiableList(new ArrayList<>(fullPath));
+        this.detailedSegments = Collections.unmodifiableList(new ArrayList<>(detailedSegments));
         this.totalDistance = totalDistance;
-        this.poiOptimizationTimeMillis = poiOptimizationTimeMillis;
-        this.totalPathfindingTimeMillis = totalPathfindingTimeMillis;
-        this.poiOptimizerAlgorithmName = poiOptimizerAlgorithmName;
-        this.pathfindingAlgorithmName = pathfindingAlgorithmName;
+        this.poiOptimizationTimeMillis = poiOptimizationTimeMillis; // Corrected field name usage
+        this.pathfindingTimeMillis = pathfindingTimeMillis;
+        this.optimizerAlgorithmName = optimizerAlgorithmName;
+        this.pathfinderAlgorithmName = pathfinderAlgorithmName;
         this.optimizerTimedOut = optimizerTimedOut;
         this.pathfinderTimedOut = pathfinderTimedOut;
-        this.statusMessage = statusMessage;
+        this.status = status;
     }
     
-    // Static factory for failed plans
+    // Static factory method for creating an error TripPlan
+    public static TripPlan createErrorPlan(String errorMessage) {
+        return new TripPlan(
+            Collections.emptyList(),
+            Collections.emptyList(),
+            Double.POSITIVE_INFINITY,
+            0.0, // poiOptimizationTimeMillis
+            0.0, // pathfindingTimeMillis
+            "N/A",
+            "N/A",
+            false,
+            false,
+            "Error: " + (errorMessage != null ? errorMessage : "Unknown error")
+        );
+    }
+
+    // Static factory method for creating a failure TripPlan (e.g. path not found)
     public static TripPlan failure(String message) {
-        return new TripPlan(List.of(), List.of(), Double.POSITIVE_INFINITY, 0, 0, "N/A", "N/A", false, false, message);
+        return new TripPlan(
+            Collections.emptyList(), 
+            Collections.emptyList(), 
+            Double.POSITIVE_INFINITY, 
+            0.0, // poiOptimizationTimeMillis
+            0.0, // pathfindingTimeMillis
+            "N/A", 
+            "N/A", 
+            false, 
+            false, 
+            "Failure: " + message
+        );
     }
 
     // Getters
@@ -59,20 +88,20 @@ public class TripPlan {
         return totalDistance;
     }
 
-    public long getPoiOptimizationTimeMillis() {
+    public double getPoiOptimizationTimeMillis() {
         return poiOptimizationTimeMillis;
     }
 
-    public double getTotalPathfindingTimeMillis() { // Changed to double
-        return totalPathfindingTimeMillis;
+    public double getPathfindingTimeMillis() {
+        return pathfindingTimeMillis;
     }
 
-    public String getPoiOptimizerAlgorithmName() {
-        return poiOptimizerAlgorithmName;
+    public String getOptimizerAlgorithmName() {
+        return optimizerAlgorithmName;
     }
 
-    public String getPathfindingAlgorithmName() {
-        return pathfindingAlgorithmName;
+    public String getPathfinderAlgorithmName() {
+        return pathfinderAlgorithmName;
     }
 
     public boolean isOptimizerTimedOut() {
@@ -83,21 +112,21 @@ public class TripPlan {
         return pathfinderTimedOut;
     }
     
-    public String getStatusMessage() {
-        return statusMessage;
+    public String getStatus() {
+        return status;
     }
 
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append("TripPlan{\n");
-        sb.append("  Status: ").append(statusMessage).append("\n");
-        sb.append("  Optimizer: ").append(poiOptimizerAlgorithmName);
+        sb.append("  Status: ").append(status).append("\n");
+        sb.append("  Optimizer: ").append(optimizerAlgorithmName);
         if (optimizerTimedOut) sb.append(" (TIMED OUT)");
         sb.append(", Time: ").append(poiOptimizationTimeMillis).append(" ms\n");
-        sb.append("  Pathfinder: ").append(pathfindingAlgorithmName);
+        sb.append("  Pathfinder: ").append(pathfinderAlgorithmName);
         if (pathfinderTimedOut) sb.append(" (Segments TIMED OUT)");
-        sb.append(", Total Time: ").append(String.format("%.3f", totalPathfindingTimeMillis)).append(" ms\n");
+        sb.append(", Total Time: ").append(String.format("%.3f", pathfindingTimeMillis)).append(" ms\n");
         sb.append("  Total Distance: ").append(String.format("%.2f", totalDistance)).append("\n");
         sb.append("  Full Path: ");
         if (fullPath == null || fullPath.isEmpty()) {

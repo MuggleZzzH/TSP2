@@ -28,18 +28,26 @@ public class Main {
         }
         System.out.println("Road network loaded successfully with " + roadNetwork.getNumberOfCities() + " cities.");
 
-        // 2. Initialize Services
-        PathfindingService dijkstraService = new DijkstraPathfindingService();
-        PoiOptimizerService permutationOptimizer = new PermutationPoiOptimizerService(dijkstraService); 
-        PoiOptimizerService dpOptimizer = new DynamicProgrammingPoiOptimizerService(dijkstraService); 
+        // 2. Initialize Services for the new architecture
+        // PathfindingService generalPathfinder = new DijkstraPathfindingService(); // Old: using standard Dijkstra
+        DenseDijkstraService denseDijkstraInstance = new DenseDijkstraService(); 
+        PathfindingService generalPathfinder = denseDijkstraInstance; // New: using DenseDijkstra globally for pathfinding
+        DistanceCache distanceCache = new DistanceCache();
 
+        // Optimizers should be typed as the interface PoiOptimizerService for the TripPlanningService constructor
+        PoiOptimizerService permutationOptimizer = new PermutationPoiOptimizerService(denseDijkstraInstance); 
+        PoiOptimizerService dpOptimizer = new DynamicProgrammingPoiOptimizerService(roadNetwork, denseDijkstraInstance);
+
+        // Match the constructor: TripPlanningService(RoadNetwork, PathfindingService, PoiOptimizerService, PoiOptimizerService, ShortestPathInfo, DistanceCache, PathfindingService)
         TripPlanningService tripPlanningService = new TripPlanningService(
-                roadNetwork, 
-                dijkstraService, 
-                permutationOptimizer, 
-                dpOptimizer
+                roadNetwork,                     // RoadNetwork
+                generalPathfinder,               // PathfindingService (for segments, now DenseDijkstra)
+                permutationOptimizer,            // PoiOptimizerService (permutation, uses DenseDijkstra)
+                dpOptimizer,                     // PoiOptimizerService (DP, fallback uses DenseDijkstra)
+                distanceCache,                   // DistanceCache
+                denseDijkstraInstance            // PathfindingService (for precomputation by DistanceCache, must be DenseDijkstra)
         );
-        System.out.println("Services initialized.");
+        System.out.println("Services initialized with new architecture (DenseDijkstra as global pathfinder).");
 
         // 3. Initialize Controller and Run Application Logic
         try {

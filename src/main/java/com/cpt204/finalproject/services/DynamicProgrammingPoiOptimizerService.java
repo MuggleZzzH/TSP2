@@ -16,18 +16,20 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class DynamicProgrammingPoiOptimizerService implements PoiOptimizerService {
 
     private static final String ALGORITHM_NAME = "Dynamic Programming (Held-Karp variant)";
-    private final PathfindingService pathfindingService;
+    private final RoadNetwork roadNetwork;
+    private final PathfindingService fallbackPathfinder;
 
-    private final Map<String, PathfindingService.PathResult> distanceCache;
-
-    public DynamicProgrammingPoiOptimizerService(PathfindingService pathfindingService) {
-        if (pathfindingService == null) {
-            throw new IllegalArgumentException("PathfindingService cannot be null");
-        }
-        this.pathfindingService = pathfindingService;
-        this.distanceCache = new HashMap<>();
+    public DynamicProgrammingPoiOptimizerService(RoadNetwork roadNetwork, PathfindingService pathfindingServiceForNoPoiCase) {
+        this.roadNetwork = roadNetwork;
+        this.fallbackPathfinder = pathfindingServiceForNoPoiCase;
     }
 
+    /**
+     * THIS IS THE OLD METHOD. It should be deprecated or adapted.
+     * For now, it will delegate to a simple path calculation if POIs are empty,
+     * otherwise, it will throw UnsupportedOperationException because it expects precomputed distances.
+     */
+    @Deprecated
     @Override
     public OptimizerResult findBestPoiOrder(
             RoadNetwork roadNetwork,
@@ -36,102 +38,108 @@ public class DynamicProgrammingPoiOptimizerService implements PoiOptimizerServic
             List<City> poisToVisit,
             boolean useTimeout,
             long timeoutMillis) {
-
         long startTime = System.currentTimeMillis();
-        AtomicBoolean timeoutOccurred = new AtomicBoolean(false);
-        long deadline = useTimeout ? startTime + timeoutMillis : Long.MAX_VALUE;
-        distanceCache.clear(); // Clear cache for each new request
-
-        if (roadNetwork == null || startCity == null || endCity == null || poisToVisit == null) {
-            System.err.println("Error: RoadNetwork, start/end cities, and POI list cannot be null.");
-            return OptimizerResult.empty(ALGORITHM_NAME);
-        }
-        
-        // --- Basic Validation ---
-        if (roadNetwork.getCityByName(startCity.getName()) == null || roadNetwork.getCityByName(endCity.getName()) == null) {
-             System.err.println("Error: Start or End city not found in network.");
-             return OptimizerResult.empty(ALGORITHM_NAME);
-        }
-        for(City poi : poisToVisit) {
-            if (roadNetwork.getCityByName(poi.getName()) == null) {
-                System.err.println("Error: POI city " + poi.getName() + " not found in network.");
-                return OptimizerResult.empty(ALGORITHM_NAME);
+        if (poisToVisit == null || poisToVisit.isEmpty()) {
+            if (this.fallbackPathfinder == null) {
+                 throw new IllegalStateException("FallbackPathfinder is null, cannot calculate path for 0 POIs using the old API.");
             }
-        }
-
-        // Handle empty POI list
-        if (poisToVisit.isEmpty()) {
-            PathfindingService.PathResult directPathResult = getDistance(roadNetwork, startCity, endCity, deadline, timeoutOccurred);
+            PathfindingService.PathResult directPathResult = fallbackPathfinder.findShortestPath(roadNetwork, startCity, endCity, Collections.emptyList(), useTimeout, timeoutMillis);
             long endTime = System.currentTimeMillis();
-             if (timeoutOccurred.get() || directPathResult.isTimedOut()) {
-                 return OptimizerResult.timedOut(ALGORITHM_NAME, endTime - startTime);
+             if (directPathResult.isTimedOut()) {
+                 return OptimizerResult.timedOut(ALGORITHM_NAME + " (Fallback)", endTime - startTime);
              }
              if (directPathResult.getTotalDistance() == Double.POSITIVE_INFINITY) {
-                 System.err.println("Warning: No direct path found between start and end for empty POI list (DP).");
-                 return OptimizerResult.empty(ALGORITHM_NAME);
+                 return OptimizerResult.empty(ALGORITHM_NAME + " (Fallback)");
              }
-            return new OptimizerResult(Collections.emptyList(), directPathResult.getTotalDistance(), endTime - startTime, false, ALGORITHM_NAME);
+            return new OptimizerResult(Collections.emptyList(), directPathResult.getTotalDistance(), endTime - startTime, false, ALGORITHM_NAME + " (Fallback)");
         }
+        System.err.println("Warning: Deprecated findBestPoiOrder called on DP optimizer without precomputed distances for POIs. This is not supported.");
+        throw new UnsupportedOperationException("DynamicProgrammingPoiOptimizerService with POIs requires precomputed distances via the new API method.");
+    }
 
-        // --- DP Setup ---
-        List<City> allPois = new ArrayList<>(poisToVisit);
-        int n = allPois.size(); // Number of POIs to visit
+    @Override
+    public OptimizerResult findBestPoiOrder(
+            City startCity, City endCity, List<City> poisToVisitOriginal, // poisToVisitOriginal is the list of pure POIs
+            Set<City> S, /* The full set of nodes (start, POIs, end) used for precomputation */
+            double[][] shortestDistances, /* Precomputed: shortestDistances[idxInS1][idxInS2] */
+            Map<City, Integer> nodeToIndexInS, /* Maps City from S to its index in shortestDistances */
+            List<City> orderedNodesInS, /* orderedNodesInS.get(i) is the city for i-th row/col in shortestDistances */
+            boolean useTimeout, long timeoutMillis) {
 
-        // dp[mask][i] stores the minimum cost to visit the subset of POIs represented by mask,
-        // ending at POI allPois.get(i).
-        // The mask is a bitmask: if the j-th bit is set, it means allPois.get(j) has been visited.
-        Map<Integer, Map<Integer, Double>> dp = new HashMap<>();
+        final long startTimeNanos = System.nanoTime();
+        final AtomicBoolean timeoutFlag = new AtomicBoolean(false);
+        final long deadlineNanos = useTimeout ? startTimeNanos + timeoutMillis * 1_000_000 : Long.MAX_VALUE;
 
-        // parent[mask][i] stores the predecessor POI index in the optimal path ending at POI i with visited set mask.
-        Map<Integer, Map<Integer, Integer>> parent = new HashMap<>();
-
-        // --- Base Case: Distance from startCity to each POI ---
-        for (int i = 0; i < n; i++) {
-             if (checkTimeout(deadline, timeoutOccurred)) return OptimizerResult.timedOut(ALGORITHM_NAME, System.currentTimeMillis() - startTime);
-             
-            PathfindingService.PathResult pathResult = getDistance(roadNetwork, startCity, allPois.get(i), deadline, timeoutOccurred);
-            if (timeoutOccurred.get() || pathResult.isTimedOut() || pathResult.getTotalDistance() == Double.POSITIVE_INFINITY) {
-                 // If timed out during getDistance or path is impossible
-                 return handleFailureOrTimeout(timeoutOccurred.get(), startTime); 
+        // Filter out start/end cities from poisToVisitOriginal to get the actual list of intermediate POIs for DP states
+        List<City> purePois = new ArrayList<>();
+        if (poisToVisitOriginal != null) {
+            for (City p : poisToVisitOriginal) {
+                if (!p.equals(startCity) && !p.equals(endCity)) {
+                    purePois.add(p);
+                }
             }
-
-            int mask = 1 << i; // Mask representing only the i-th POI visited
-            dp.computeIfAbsent(mask, k -> new HashMap<>()).put(i, pathResult.getTotalDistance());
-            parent.computeIfAbsent(mask, k -> new HashMap<>()).put(i, -1); // -1 indicates startCity is the predecessor
         }
 
-        // --- DP Calculation ---
-        // Iterate through all possible subset sizes (from 1 POI up to n POIs)
-        for (int mask = 1; mask < (1 << n); mask++) {
-             if (checkTimeout(deadline, timeoutOccurred)) return OptimizerResult.timedOut(ALGORITHM_NAME, System.currentTimeMillis() - startTime);
-             
-             if (dp.get(mask) == null) continue; // Skip masks that are unreachable or not yet processed
+        // Handle 0 pure POIs case: direct path from start to end
+        if (purePois.isEmpty()) {
+            Integer startIndex = nodeToIndexInS.get(startCity);
+            Integer endIndex = nodeToIndexInS.get(endCity);
+            if (startIndex == null || endIndex == null) {
+                return OptimizerResult.empty(ALGORITHM_NAME + " (Error: Start/End not in S)");
+            }
+            double dist = shortestDistances[startIndex][endIndex];
+            final double durationMillis = (System.nanoTime() - startTimeNanos) / 1_000_000.0;
+            return new OptimizerResult(Collections.emptyList(), dist, durationMillis, false, ALGORITHM_NAME + " (0 POIs)");
+        }
 
-            // For each POI 'i' that is the last visited city in the current subset 'mask'
-            for (int i = 0; i < n; i++) {
-                if ((mask & (1 << i)) != 0) { // Check if POI 'i' is in the current subset 'mask'
-                    double currentCost = dp.get(mask).getOrDefault(i, Double.POSITIVE_INFINITY);
-                    if (currentCost == Double.POSITIVE_INFINITY) continue; // Skip if this state is unreachable
-                    
-                    // Try extending the path to include a new POI 'j' not already in the mask
-                    for (int j = 0; j < n; j++) {
-                        if ((mask & (1 << j)) == 0) { // If POI 'j' is not in the current mask
-                             if (checkTimeout(deadline, timeoutOccurred)) return OptimizerResult.timedOut(ALGORITHM_NAME, System.currentTimeMillis() - startTime);
-                             
-                            PathfindingService.PathResult pathResult = getDistance(roadNetwork, allPois.get(i), allPois.get(j), deadline, timeoutOccurred);
-                             if (timeoutOccurred.get() || pathResult.isTimedOut() || pathResult.getTotalDistance() == Double.POSITIVE_INFINITY) {
-                                 if (timeoutOccurred.get()) return OptimizerResult.timedOut(ALGORITHM_NAME, System.currentTimeMillis() - startTime);
-                                 continue; // Cannot reach city j from i, try next j
-                            }
+        int K = purePois.size(); // Number of intermediate POIs for DP
 
-                            double distanceItoJ = pathResult.getTotalDistance();
-                            int nextMask = mask | (1 << j); // New mask including POI j
-                            double newCost = currentCost + distanceItoJ;
+        // dp[mask][i] = cost to visit POIs in mask, ending at purePois.get(i)
+        double[][] dp = new double[1 << K][K];
+        // parent[mask][i] = previous POI index in purePois list for path to purePois.get(i) with mask
+        int[][] parent = new int[1 << K][K];
 
-                            // If this path to POI 'j' via POI 'i' is shorter than any previously found path to 'j' with the same visited set 'nextMask'
-                            if (newCost < dp.computeIfAbsent(nextMask, k -> new HashMap<>()).getOrDefault(j, Double.POSITIVE_INFINITY)) {
-                                dp.get(nextMask).put(j, newCost);
-                                parent.computeIfAbsent(nextMask, k -> new HashMap<>()).put(j, i); // Record that 'i' is the predecessor of 'j' for this mask
+        for (double[] row : dp) Arrays.fill(row, Double.POSITIVE_INFINITY);
+        for (int[] row : parent) Arrays.fill(row, -1);
+
+        Integer startIndexInS = nodeToIndexInS.get(startCity);
+        if (startIndexInS == null) return OptimizerResult.empty(ALGORITHM_NAME + " (Error: Start City not in S map)");
+
+        // Base cases: from startCity to each pure POI k
+        for (int k = 0; k < K; k++) {
+            if (checkTimeout(deadlineNanos, timeoutFlag)) return OptimizerResult.timedOut(ALGORITHM_NAME, (System.nanoTime() - startTimeNanos) / 1_000_000.0);
+            City poiK = purePois.get(k);
+            Integer poiKIndexInS = nodeToIndexInS.get(poiK);
+            if (poiKIndexInS == null) {
+                System.err.println("Error: POI " + poiK.getName() + " not found in nodeToIndexInS map.");
+                continue; // Or handle more gracefully
+            }
+            dp[1 << k][k] = shortestDistances[startIndexInS][poiKIndexInS];
+            // Parent for base case is implicitly the start node, so -1 (or a special value) is fine for parent[1<<k][k]
+        }
+
+        // DP transitions
+        for (int mask = 1; mask < (1 << K); mask++) {
+            if (checkTimeout(deadlineNanos, timeoutFlag)) return OptimizerResult.timedOut(ALGORITHM_NAME, (System.nanoTime() - startTimeNanos) / 1_000_000.0);
+            for (int i = 0; i < K; i++) { // Current last POI in path for this mask is purePois.get(i)
+                if ((mask & (1 << i)) != 0) { // If purePois.get(i) is in the set specified by mask
+                    if (dp[mask][i] == Double.POSITIVE_INFINITY) continue; // Skip unreachable states
+
+                    Integer poiIIndexInS = nodeToIndexInS.get(purePois.get(i));
+                    if (poiIIndexInS == null) continue; // Should not happen if base cases are set up
+
+                    for (int j = 0; j < K; j++) { // Next POI to visit is purePois.get(j)
+                        if ((mask & (1 << j)) == 0) { // If purePois.get(j) is NOT in the mask yet
+                            Integer poiJIndexInS = nodeToIndexInS.get(purePois.get(j));
+                            if (poiJIndexInS == null) continue;
+
+                            double distItoJ = shortestDistances[poiIIndexInS][poiJIndexInS];
+                            if (distItoJ == Double.POSITIVE_INFINITY) continue; // Cannot go from i to j
+
+                            int nextMask = mask | (1 << j);
+                            if (dp[mask][i] + distItoJ < dp[nextMask][j]) {
+                                dp[nextMask][j] = dp[mask][i] + distItoJ;
+                                parent[nextMask][j] = i; // purePois.get(i) is predecessor of purePois.get(j)
                             }
                         }
                     }
@@ -139,122 +147,69 @@ public class DynamicProgrammingPoiOptimizerService implements PoiOptimizerServic
             }
         }
 
-        // --- Find the final path and minimum cost ---
-        // After filling the DP table, find the minimum cost path that visits all POIs (mask = (1<<n) - 1)
-        // and ends at the endCity.
+        // Find best path to endCity from all states where all K POIs are visited
         double minTotalDistance = Double.POSITIVE_INFINITY;
-        int lastPoiIndex = -1;
-        int finalMask = (1 << n) - 1;
+        int lastPurePoiIndex = -1; // Index in purePois list
+        int finalMask = (1 << K) - 1;
 
-         if (dp.get(finalMask) == null) { // Never reached the state where all POIs were visited
-             System.err.println("Error: Could not find a path visiting all POIs.");
-             return handleFailureOrTimeout(timeoutOccurred.get(), startTime);
-         }
+        Integer endIndexInS = nodeToIndexInS.get(endCity);
+        if (endIndexInS == null) return OptimizerResult.empty(ALGORITHM_NAME + " (Error: End City not in S map)");
 
-        for (int i = 0; i < n; i++) {
-             if (checkTimeout(deadline, timeoutOccurred)) return OptimizerResult.timedOut(ALGORITHM_NAME, System.currentTimeMillis() - startTime);
-             
-            double costToLastPoi = dp.get(finalMask).getOrDefault(i, Double.POSITIVE_INFINITY);
-             if (costToLastPoi == Double.POSITIVE_INFINITY) continue;
+        for (int k = 0; k < K; k++) { // k is the index of the last pure POI visited
+            if (checkTimeout(deadlineNanos, timeoutFlag)) return OptimizerResult.timedOut(ALGORITHM_NAME, (System.nanoTime() - startTimeNanos) / 1_000_000.0);
+            if (dp[finalMask][k] == Double.POSITIVE_INFINITY) continue;
 
-            PathfindingService.PathResult pathResult = getDistance(roadNetwork, allPois.get(i), endCity, deadline, timeoutOccurred);
-             if (timeoutOccurred.get() || pathResult.isTimedOut() || pathResult.getTotalDistance() == Double.POSITIVE_INFINITY) {
-                  if (timeoutOccurred.get()) return OptimizerResult.timedOut(ALGORITHM_NAME, System.currentTimeMillis() - startTime);
-                 continue; // Cannot reach end city from this last POI
-             }
-            
-            double distanceLastPoiToEnd = pathResult.getTotalDistance();
-            double totalCost = costToLastPoi + distanceLastPoiToEnd;
+            Integer poiKIndexInS = nodeToIndexInS.get(purePois.get(k));
+            if (poiKIndexInS == null) continue;
 
-            if (totalCost < minTotalDistance) {
-                minTotalDistance = totalCost;
-                lastPoiIndex = i;
+            double distKToEnd = shortestDistances[poiKIndexInS][endIndexInS];
+            if (distKToEnd == Double.POSITIVE_INFINITY) continue;
+
+            if (dp[finalMask][k] + distKToEnd < minTotalDistance) {
+                minTotalDistance = dp[finalMask][k] + distKToEnd;
+                lastPurePoiIndex = k;
             }
         }
 
-        if (lastPoiIndex == -1) {
-            System.err.println("Error: Could not find a complete path to the end city visiting all POIs.");
-             return handleFailureOrTimeout(timeoutOccurred.get(), startTime);
+        if (lastPurePoiIndex == -1 || minTotalDistance == Double.POSITIVE_INFINITY) {
+            final double durationMillisOnFailure = (System.nanoTime() - startTimeNanos) / 1_000_000.0;
+            if(timeoutFlag.get()) return OptimizerResult.timedOut(ALGORITHM_NAME, durationMillisOnFailure);
+            System.err.println("DP: Could not find a path visiting all POIs and reaching the end city.");
+            return OptimizerResult.empty(ALGORITHM_NAME + " (No path found)");
         }
 
-        // --- Reconstruct the best path order ---
-        List<City> bestPoiOrder = new LinkedList<>(); // Use LinkedList for efficient prepending
+        // Reconstruct path (list of purePois in order)
+        List<City> bestPurePoiOrder = new ArrayList<>();
+        int currentPurePoiIndex = lastPurePoiIndex;
         int currentMask = finalMask;
-        int currentIndex = lastPoiIndex;
-        while (currentIndex != -1) {
-            bestPoiOrder.add(0, allPois.get(currentIndex)); // Prepend to list
-            int predecessorIndex = parent.get(currentMask).get(currentIndex);
-            currentMask = currentMask ^ (1 << currentIndex); // Remove current city from mask
-            currentIndex = predecessorIndex;
+        while (currentPurePoiIndex != -1) {
+            bestPurePoiOrder.add(purePois.get(currentPurePoiIndex));
+            int prevPurePoiIndex = parent[currentMask][currentPurePoiIndex];
+            currentMask ^= (1 << currentPurePoiIndex); // Remove current POI from mask
+            currentPurePoiIndex = prevPurePoiIndex;
         }
+        Collections.reverse(bestPurePoiOrder);
 
-        long endTime = System.currentTimeMillis();
-        
-        if (timeoutOccurred.get()) {
-           System.out.println("Warning: DP POI optimization timed out after " + (endTime - startTime) + " ms.");
-           return OptimizerResult.timedOut(ALGORITHM_NAME, endTime - startTime);
+        final double durationMillis = (System.nanoTime() - startTimeNanos) / 1_000_000.0;
+        if (timeoutFlag.get()) {
+            return OptimizerResult.timedOut(ALGORITHM_NAME, durationMillis);
         }
-
-        return new OptimizerResult(bestPoiOrder, minTotalDistance, endTime - startTime, false, ALGORITHM_NAME);
+        return new OptimizerResult(bestPurePoiOrder, minTotalDistance, durationMillis, false, ALGORITHM_NAME);
     }
-    
+
     /** Helper to check timeout */
-    private boolean checkTimeout(long deadline, AtomicBoolean timeoutOccurred) {
-        if (System.currentTimeMillis() > deadline) {
+    private boolean checkTimeout(long deadlineNanos, AtomicBoolean timeoutOccurred) {
+        if (System.nanoTime() > deadlineNanos) {
             timeoutOccurred.set(true);
             return true;
         }
         return false;
     }
     
-    /** Helper to handle returning empty or timed-out result */
-    private OptimizerResult handleFailureOrTimeout(boolean timedOut, long startTime) {
-        long endTime = System.currentTimeMillis();
-        if(timedOut) {
-            return OptimizerResult.timedOut(ALGORITHM_NAME, endTime - startTime);
-        }
-        return OptimizerResult.empty(ALGORITHM_NAME);
-    }
+    // Removed old getDistance and handleFailureOrTimeout as they are not used by the new method
+    // The old findBestPoiOrder (marked @Deprecated) handles its own simple failures/timeouts.
 
-    /**
-     * Helper method to get distance between two cities using PathfindingService.
-     * Restored caching logic.
-     */
-    private PathfindingService.PathResult getDistance(
-            RoadNetwork roadNetwork, // Needed again for PathfindingService
-            City cityA,
-            City cityB,
-            long deadline, // Still used for overall timeout checking
-            AtomicBoolean timeoutOccurred) {
-        
-        if (checkTimeout(deadline, timeoutOccurred)) {
-            // Return a dummy timed-out result if timeout happens before pathfinding call
-             return new PathfindingService.PathResult(Collections.emptyList(), Double.POSITIVE_INFINITY, 0, true, "CacheCheckTimeout");
-        }
-
-        // Create a unique cache key (order city names alphabetically)
-        String key = cityA.getName().compareTo(cityB.getName()) < 0
-                     ? cityA.getName() + "_" + cityB.getName()
-                     : cityB.getName() + "_" + cityA.getName();
-
-        // Check cache first
-        if (distanceCache.containsKey(key)) {
-            return distanceCache.get(key);
-        }
-
-        // If not in cache, calculate using the pathfinding service
-        PathfindingService.PathResult result = pathfindingService.findShortestPath(roadNetwork, cityA, cityB, Collections.emptyList(), false, 0); 
-
-        // Check for timeout immediately after the call returns (in case the call was long)
-        if (checkTimeout(deadline, timeoutOccurred)) {
-             // Even if pathfinding returned a result, if timeout occurred during/after, treat as timed out
-            return new PathfindingService.PathResult(Collections.emptyList(), Double.POSITIVE_INFINITY, 0, true, "PathfindCheckTimeout");
-        }
-        
-         // Cache the result (even if distance is infinity, to avoid recalculating)
-         // We cache the whole PathResult now.
-         distanceCache.put(key, result);
- 
-         return result;
-    }
+    // The existing main findBestPoiOrder that uses Maps for DP states should be removed or fully refactored.
+    // For now, I am assuming the @Override for the precomputed distances is the primary one to implement.
+    // The old implementation from line 45 to 199 in the original file needs to be deleted.
 } 
