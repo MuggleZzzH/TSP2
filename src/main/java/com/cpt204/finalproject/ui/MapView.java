@@ -11,6 +11,7 @@ import javafx.geometry.Insets;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.Button;
+import javafx.scene.control.Label;
 import javafx.scene.control.Slider;
 import javafx.scene.control.Tooltip;
 import javafx.scene.layout.Background;
@@ -58,6 +59,9 @@ public class MapView extends BorderPane {
     private Button resetViewButton;
     private Slider zoomSlider;
     
+    // Tooltip Label for city/attraction info
+    private Label infoTooltipLabel;
+    
     // 视图变换参数
     private double zoomFactor = 1.0;
     private double translateX = 0;
@@ -93,6 +97,33 @@ public class MapView extends BorderPane {
         canvasContainer = new Pane();
         canvas = new Canvas(800, 600);
         canvasContainer.getChildren().add(canvas);
+        
+        // Initialize and add the info tooltip label
+        infoTooltipLabel = new Label();
+        infoTooltipLabel.setVisible(false);
+        infoTooltipLabel.setStyle(
+            "-fx-background-color: rgba(240, 240, 240, 0.95); " +
+            "-fx-text-fill: #2c3e50; " +
+            "-fx-padding: 8px; " +
+            "-fx-border-color: #bdc3c7; " +
+            "-fx-border-width: 1px; " +
+            "-fx-border-radius: 4px; " +
+            "-fx-background-radius: 4px; " +
+            "-fx-font-size: 13px;"
+        );
+        infoTooltipLabel.setWrapText(true); // Allow multi-line text
+        infoTooltipLabel.setMaxWidth(250); // Prevent it from becoming too wide
+        
+        // Add drop shadow for better visibility
+        DropShadow tooltipShadow = new DropShadow();
+        tooltipShadow.setRadius(5.0);
+        tooltipShadow.setOffsetX(2.0);
+        tooltipShadow.setOffsetY(2.0);
+        tooltipShadow.setColor(Color.color(0, 0, 0, 0.3));
+        infoTooltipLabel.setEffect(tooltipShadow);
+        
+        canvasContainer.getChildren().add(infoTooltipLabel); // Add to container so it's on top of canvas
+        
         setCenter(canvasContainer);
         
         // 设置地图背景
@@ -108,6 +139,7 @@ public class MapView extends BorderPane {
         
         // 设置拖拽事件处理
         setupDragHandlers();
+        setupMouseHoverHandler();
         
         // 初始化城市和景点位置
         initializePositions();
@@ -198,6 +230,82 @@ public class MapView extends BorderPane {
         });
     }
     
+    private void setupMouseHoverHandler() {
+        canvas.setOnMouseMoved(e -> {
+            // Convert mouse coordinates from canvas space to world space (considering zoom and translation)
+            double mouseWorldX = (e.getX() / zoomFactor) - translateX;
+            double mouseWorldY = (e.getY() / zoomFactor) - translateY;
+
+            String tooltipText = null;
+            Point hoveredItemPosition = null; // Store the position of the item being hovered to position the tooltip
+
+            // Check cities first
+            for (Map.Entry<String, Point> entry : cityPositions.entrySet()) {
+                String cityName = entry.getKey();
+                Point cityScreenPos = entry.getValue(); // cityPositions stores screen coordinates (after zoom/translate in redraw)
+                
+                // We need to check against the *original* logical positions before zoom/translate
+                // Or, convert mouse acreen coordinates to the same space as cityPositions are calculated in initializePositions
+                // For simplicity, let's assume cityPositions are already in a consistent coordinate space for hit testing relative to mouseWorldX/Y.
+                // This part might need refinement based on how cityPositions are truly calculated and updated.
+                // The current cityPositions are screen positions, so we compare with e.getX(), e.getY()
+
+                double distSq = Math.pow(e.getX() - cityScreenPos.x, 2) + Math.pow(e.getY() - cityScreenPos.y, 2);
+                if (distSq < CITY_RADIUS * CITY_RADIUS * zoomFactor * zoomFactor) { // Consider zoomFactor for hit radius
+                    City city = roadNetwork.getCityByName(cityName);
+                    if (city != null) {
+                        StringBuilder sb = new StringBuilder();
+                        sb.append(LanguageManager.getText("cityLabelPrefix")).append(city.getName()); // e.g., "City: "
+                        
+                        Set<Attraction> attractionsInCity = roadNetwork.getAttractionsInCity(cityName); // Changed to use existing method and Set
+                        if (attractionsInCity != null && !attractionsInCity.isEmpty()) {
+                            sb.append("\n").append(LanguageManager.getText("attractionsLabelPrefix")); // e.g., "Attractions:"
+                            for (Attraction attraction : attractionsInCity) {
+                                sb.append("\n - ").append(attraction.getAttractionName());
+                            }
+                        }
+                        tooltipText = sb.toString();
+                        hoveredItemPosition = cityScreenPos;
+                        break; 
+                    }
+                }
+            }
+
+            // If no city hovered, check attractions (optional, can be added later)
+            // For now, focusing on city hover with attractions
+
+            if (tooltipText != null && hoveredItemPosition != null) {
+                infoTooltipLabel.setText(tooltipText);
+                // Position the tooltip slightly offset from the mouse or the item
+                // Adjust these offsets as needed
+                double tooltipX = hoveredItemPosition.x + 15; // Offset from city center
+                double tooltipY = hoveredItemPosition.y - infoTooltipLabel.getBoundsInLocal().getHeight() / 2; // Center vertically or above
+                
+                // Ensure tooltip stays within canvasContainer bounds
+                if (tooltipX + infoTooltipLabel.getWidth() > canvasContainer.getWidth()) {
+                    tooltipX = hoveredItemPosition.x - infoTooltipLabel.getWidth() - 15;
+                }
+                if (tooltipY < 0) {
+                    tooltipY = 0;
+                }
+                if (tooltipY + infoTooltipLabel.getHeight() > canvasContainer.getHeight()) {
+                    tooltipY = canvasContainer.getHeight() - infoTooltipLabel.getHeight();
+                }
+
+                infoTooltipLabel.setLayoutX(tooltipX);
+                infoTooltipLabel.setLayoutY(tooltipY);
+                infoTooltipLabel.setVisible(true);
+            } else {
+                infoTooltipLabel.setVisible(false);
+            }
+        });
+
+        // Hide tooltip when mouse exits the canvas area
+        canvas.setOnMouseExited(e -> {
+            infoTooltipLabel.setVisible(false);
+        });
+    }
+    
     private void zoom(double factor) {
         zoomFactor *= factor;
         zoomFactor = Math.max(0.5, Math.min(zoomFactor, 3.0));
@@ -285,9 +393,9 @@ public class MapView extends BorderPane {
                     
                     cityPositions.put(city.getName(), new Point(x, y));
                 }
-            }
-        }
-        
+                    }
+                }
+                
         // 为景点分配位置 - 围绕城市，但间距更大
         Random attrRandom = new Random(42); // 使用固定种子
         Collection<Attraction> attractions = roadNetwork.getAllAttractions();
@@ -301,17 +409,17 @@ public class MapView extends BorderPane {
                                         attractionsPerCityMap.getOrDefault(attraction.getCityName(), 0) + 1);
             }
         }
-
+        
         // Pass 2: Position attractions
         Map<String, Integer> currentAttractionIndexForCity = new HashMap<>(); // To get 0-indexed 'count' for angle
         
         if (attractions != null) {
-            for (Attraction attraction : attractions) {
-                String cityName = attraction.getCityName();
-                String attractionName = attraction.getAttractionName();
-                
-                Point cityPos = cityPositions.get(cityName);
-                if (cityPos != null) {
+        for (Attraction attraction : attractions) {
+            String cityName = attraction.getCityName();
+            String attractionName = attraction.getAttractionName();
+            
+            Point cityPos = cityPositions.get(cityName);
+            if (cityPos != null) {
                     int totalAttractionsInThisCity = attractionsPerCityMap.getOrDefault(cityName, 1);
                     int attractionOIndexed = currentAttractionIndexForCity.getOrDefault(cityName, 0);
 
@@ -337,11 +445,11 @@ public class MapView extends BorderPane {
                         // Range: 0.5 * maxPlacementRadius to 0.9 * maxPlacementRadius
                         distance = maxPlacementRadius * (0.5 + attrRandom.nextDouble() * 0.4);
                     }
-                    
-                    double x = cityPos.x + distance * Math.cos(angle);
-                    double y = cityPos.y + distance * Math.sin(angle);
-                    
-                    attractionPositions.put(attractionName, new Point(x, y));
+                
+                double x = cityPos.x + distance * Math.cos(angle);
+                double y = cityPos.y + distance * Math.sin(angle);
+                
+                attractionPositions.put(attractionName, new Point(x, y));
                     currentAttractionIndexForCity.put(cityName, attractionOIndexed + 1);
                 }
             }
@@ -496,8 +604,8 @@ public class MapView extends BorderPane {
         // 绘制所有道路
         drawRoads(gc);
         
-        // 绘制所有景点
-        drawAttractions(gc);
+        // 绘制所有景点 - 注释掉此行以取消独立绘制景点
+        // drawAttractions(gc);
         
         // 如果有行程计划，则绘制路线
         if (currentPlan != null) {
@@ -596,7 +704,7 @@ public class MapView extends BorderPane {
     }
     
     private void drawCities(GraphicsContext gc) {
-        gc.setFont(Font.font("Arial", FontWeight.BOLD, 14));
+        gc.setFont(Font.font("Arial", FontWeight.BOLD, 14)); // Default font for city name part
         gc.setTextAlign(TextAlignment.LEFT);
         
         // 添加阴影效果
@@ -606,12 +714,12 @@ public class MapView extends BorderPane {
         shadow.setOffsetY(2.0);
         shadow.setColor(Color.color(0, 0, 0, 0.5));
         
-        // 计算城市标签的位置，避免重叠
-        Map<String, Point> labelPositions = calculateLabelPositions();
+        // 计算城市标签的位置，避免重叠 (这部分可能需要调整，因为标签大小变了)
+        Map<String, Point> labelPositions = calculateLabelPositions(); // This might need adjustment if label sizes change significantly due to multi-line text.
         
         for (Map.Entry<String, Point> entry : cityPositions.entrySet()) {
             String cityName = entry.getKey();
-            Point pos = entry.getValue();
+            Point pos = entry.getValue(); // This is the city circle's center
             
             // 外圈白色光晕
             gc.setFill(Color.WHITE);
@@ -631,31 +739,84 @@ public class MapView extends BorderPane {
             gc.strokeOval(pos.x - CITY_RADIUS, pos.y - CITY_RADIUS,
                        CITY_RADIUS * 2, CITY_RADIUS * 2);
             
-            // 城市名称
-            Point labelCenterPos = labelPositions.get(cityName);
+            // 构建城市和景点信息文本
+            StringBuilder labelTextBuilder = new StringBuilder(cityName);
+            List<String> attractionNameList = new ArrayList<>();
+            if (roadNetwork != null) {
+                Set<Attraction> attractionsInCity = roadNetwork.getAttractionsInCity(cityName);
+                if (attractionsInCity != null && !attractionsInCity.isEmpty()) {
+                    // labelTextBuilder.append("\n").append(LanguageManager.getText("attractionsLabelPrefix")); // Optional: "Attractions:" prefix
+                    for (Attraction attraction : attractionsInCity) {
+                        String name = attraction.getAttractionName();
+                        // Optionally shorten attraction names if they are too long for the label
+                        // if (name.length() > 15) name = name.substring(0, 13) + "..";
+                        labelTextBuilder.append("\n- ").append(name);
+                        attractionNameList.add("- " + name);
+                    }
+                }
+            }
+            String fullLabelText = labelTextBuilder.toString();
+            
+            // 城市名称与景点标签
+            Point labelCenterPos = labelPositions.get(cityName); // Get pre-calculated label position
             if (labelCenterPos != null) {
-                Font labelFont = Font.font("Arial", FontWeight.NORMAL, 12);
-                gc.setFont(labelFont);
-
+                Font cityNameFont = Font.font("Arial", FontWeight.BOLD, 13); // Font for city name
+                Font attractionFont = Font.font("Arial", FontWeight.NORMAL, 11); // Font for attractions
+                
                 // Estimate text width and height for drawing the background box
-                // Using a heuristic again. For perfect fit, use Text.getLayoutBounds().
-                double textWidth = cityName.length() * (labelFont.getSize() * 0.65) + 10; 
-                textWidth = Math.max(30, textWidth); // Minimum width
-                double textHeight = labelFont.getSize() + 10;
+                // This needs to be more robust for multi-line text.
+                // We'll sum heights and take max width.
+                double totalTextHeight = cityNameFont.getSize() + 2; // Padding for city name line
+                double maxTextWidth = estimateTextWidth(cityName, cityNameFont) + 10; // Padding
+
+                for (String attractionLine : attractionNameList) {
+                    totalTextHeight += attractionFont.getSize() + 1; // Line height + spacing for attractions
+                    maxTextWidth = Math.max(maxTextWidth, estimateTextWidth(attractionLine, attractionFont) + 10);
+                }
+                totalTextHeight += 8; // Overall padding for the box
+
+                double boxWidth = Math.max(40, maxTextWidth); 
+                double boxHeight = totalTextHeight;
                 
                 // 标签背景带阴影
                 gc.setEffect(new DropShadow(3, 1, 1, Color.color(0, 0, 0, 0.3)));
                 gc.setFill(Color.WHITE);
-                gc.fillRoundRect(labelCenterPos.x - textWidth / 2, labelCenterPos.y - textHeight / 2, 
-                               textWidth, textHeight, 6, 6);
+                // Adjust labelCenterPos to be top-left of the box for easier multi-line drawing
+                double boxX = labelCenterPos.x - boxWidth / 2;
+                double boxY = labelCenterPos.y - boxHeight / 2;
+                gc.fillRoundRect(boxX, boxY, boxWidth, boxHeight, 6, 6);
                 gc.setEffect(null);
                 
-                gc.setFill(TEXT_COLOR);
-                gc.setTextAlign(TextAlignment.CENTER);
-                gc.setTextBaseline(javafx.geometry.VPos.CENTER); // Align text vertically centered
-                gc.fillText(cityName, labelCenterPos.x, labelCenterPos.y);
+                // Draw text line by line
+                gc.setTextAlign(TextAlignment.CENTER); 
+                gc.setTextBaseline(javafx.geometry.VPos.TOP); // Align to top for multi-line
+
+                double currentY = boxY + 5; // Start Y for text drawing, with some top padding
+
+                // Draw City Name
+                gc.setFill(TEXT_COLOR); // City name color
+                gc.setFont(cityNameFont);
+                gc.fillText(cityName, labelCenterPos.x, currentY);
+                currentY += cityNameFont.getSize() + 2; // Move to next line
+
+                // Draw Attractions
+                gc.setFont(attractionFont);
+                // gc.setFill(ATTRACTION_COLOR.darker()); // Example: Different color for attractions
+                for (String attractionLine : attractionNameList) {
+                    gc.fillText(attractionLine, labelCenterPos.x, currentY);
+                    currentY += attractionFont.getSize() + 1; // Move to next line
             }
         }
+        }
+    }
+
+    // Helper method to estimate text width (JavaFX doesn't have a direct GraphicsContext.measureText)
+    private double estimateTextWidth(String text, Font font) {
+        // This is a heuristic. For precise measurement, you'd use a javafx.scene.text.Text node:
+        // Text textNode = new Text(text); textNode.setFont(font); return textNode.getLayoutBounds().getWidth();
+        if (text == null || text.isEmpty()) return 0;
+        // A common approximation: average char width is around 0.6 to 0.7 times font size.
+        return text.length() * font.getSize() * 0.65; 
     }
     
     /**
@@ -664,16 +825,16 @@ public class MapView extends BorderPane {
     private Map<String, Point> calculateLabelPositions() {
         Map<String, Point> labelCenterPositions = new HashMap<>();
         if (canvas == null || cityPositions == null) return labelCenterPositions;
-
+                
         double canvasCenterX = canvas.getWidth() / 2.0;
         double canvasCenterY = canvas.getHeight() / 2.0;
         
         Font labelFont = Font.font("Arial", FontWeight.NORMAL, 12);
 
         for (Map.Entry<String, Point> entry : cityPositions.entrySet()) {
-            String cityName = entry.getKey(); 
+            String cityName = entry.getKey();
             Point cityPos = entry.getValue();
-
+            
             double vecX = cityPos.x - canvasCenterX;
             double vecY = cityPos.y - canvasCenterY;
             double mag = Math.sqrt(vecX * vecX + vecY * vecY);

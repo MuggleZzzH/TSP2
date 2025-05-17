@@ -135,10 +135,23 @@ public class TripPlanningService {
             }
         }
 
+        // Optimization: Remove POIs that are the same as the start or end city
+        // and ensure they are not counted towards the POI count for optimizer selection.
+        if (startCity != null) { // Ensure startCity is not null before using in lambda
+            poiCities.removeIf(poi -> poi.equals(startCity));
+        }
+        if (endCity != null) { // Ensure endCity is not null
+            poiCities.removeIf(poi -> poi.equals(endCity));
+        }
+        
+        // Note: The attractionsToVisit list might now contain attractions whose cities
+        // have been removed from poiCities. This is generally fine as poiCities drives the routing.
+        // If precise synchronization of attractionsToVisit were needed, more logic would be here.
+
         // 2. Optimize POI Order
         PoiOptimizerService.OptimizerResult optimizerResult;
         String effectiveOptimizerName;
-        PoiOptimizerService optimizerToUse; 
+        PoiOptimizerService optimizerToUse;
 
         if (poiCities.isEmpty()) {
             System.out.println("No POIs selected. Calculating direct path.");
@@ -201,7 +214,7 @@ public class TripPlanningService {
                         startCity, endCity, poiCities, 
                         S, shortestDistances, nodeToIndexInS, orderedNodesInS,
                         useTimeout, remainingTimeoutForPrecomputation); 
-            } else {
+        } else {
                 System.err.println("Error: dpOptimizer is not an instance of DynamicProgrammingPoiOptimizerService. Falling back to deprecated method or failing.");
                 optimizerResult = dpOptimizer.findBestPoiOrder(roadNetwork, startCity, endCity, poiCities, useTimeout, timeoutMillis);
                  if (optimizerResult.isTimedOut()) { // Check result of fallback

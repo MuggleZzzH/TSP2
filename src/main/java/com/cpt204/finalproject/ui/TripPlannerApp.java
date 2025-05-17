@@ -47,6 +47,29 @@ public class TripPlannerApp extends Application {
     private Label titleLabel;
     private Button langButton;
 
+    // Additional UI component references for dynamic text updates
+    // For CitySelectionPane
+    private Label citySearchLabel;
+    private TextField citySearchField;
+    private Label startCityLabel;
+    private Label endCityLabel;
+
+    // For AttractionSelectionPane
+    private Label attractionSearchLabel;
+    private TextField attractionSearchField;
+    private Label attractionAvailableLabel;
+    private Label attractionSelectedLabel;
+    private Button attractionAddButton;
+    private Button attractionRemoveButton;
+    // ListView<String> availableAttractionsListView; // Not directly changing its own text
+    // ObservableList<String> selectedAttractions; // Data, not a label itself
+
+    // For TitledPanes
+    private TitledPane citySelectionTitledPane;
+    private TitledPane attractionSelectionTitledPane;
+    private TitledPane resultTitledPane;
+    private TitledPane mapTitledPane;
+
     // Define colors (matching MapView for consistency)
     private static final Color CITY_COLOR = Color.web("#3498db");
     private static final Color START_CITY_COLOR = Color.web("#2ecc71");
@@ -82,7 +105,7 @@ public class TripPlannerApp extends Application {
         VBox rightMapAndResultsPanel = createRightPanel(); // This VBox contains results and map
         
         splitPane.getItems().addAll(leftPanel, rightMapAndResultsPanel);
-        splitPane.setDividerPositions(0.35); // Adjusted divider
+        splitPane.setDividerPositions(0.30); // Adjusted divider: smaller left panel, larger right panel
         
         // Create a new HBox to hold the splitPane and the legend
         HBox mainContentArea = new HBox();
@@ -143,39 +166,33 @@ public class TripPlannerApp extends Application {
         // 更新图例文本
         BorderPane root = (BorderPane) getScene().getRoot();
         HBox mainContentArea = (HBox) root.getCenter();
-        if (mainContentArea != null && mainContentArea.getChildren().size() > 1) {
+        if (mainContentArea != null && mainContentArea.getChildren().size() > 1 && mainContentArea.getChildren().get(1) instanceof VBox) {
             VBox legendPane = (VBox) mainContentArea.getChildren().get(1);
             if (legendPane != null && !legendPane.getChildren().isEmpty()) {
                 // 更新图例标题
                 if (legendPane.getChildren().get(0) instanceof Label) {
                     Label legendTitle = (Label) legendPane.getChildren().get(0);
-                    legendTitle.setText(LanguageManager.isChineseLanguage() ? "图例" : "Legend");
+                    legendTitle.setText(LanguageManager.getText("legend.title")); // 使用键
                 }
                 
-                // 更新图例项文本
+                // 更新图例项文本 - 假设顺序是固定的或可以推断出键
+                // 需要确保 createLegendPane 创建的顺序与这些键对应
+                String[] legendItemKeys = {
+                    "legend.city", 
+                    "legend.startPoint", 
+                    "legend.endPoint", 
+                    "legend.waypoint", 
+                    "legend.attraction", 
+                    "legend.road", 
+                    "legend.plannedRoute"
+                };
+
                 for (int i = 1; i < legendPane.getChildren().size(); i++) {
-                    if (legendPane.getChildren().get(i) instanceof HBox) {
+                    if (i -1 < legendItemKeys.length && legendPane.getChildren().get(i) instanceof HBox) {
                         HBox item = (HBox) legendPane.getChildren().get(i);
                         if (item.getChildren().size() > 1 && item.getChildren().get(1) instanceof Label) {
                             Label itemLabel = (Label) item.getChildren().get(1);
-                            String currentText = itemLabel.getText();
-                            
-                            // 基于当前文本更新图例项标签
-                            if (currentText.equals("城市") || currentText.equals("City")) {
-                                itemLabel.setText(LanguageManager.isChineseLanguage() ? "城市" : "City");
-                            } else if (currentText.equals("起点") || currentText.equals("Start Point")) {
-                                itemLabel.setText(LanguageManager.getText("startPoint"));
-                            } else if (currentText.equals("终点") || currentText.equals("End Point")) {
-                                itemLabel.setText(LanguageManager.getText("endPoint"));
-                            } else if (currentText.equals("途经点") || currentText.equals("Waypoint")) {
-                                itemLabel.setText(LanguageManager.isChineseLanguage() ? "途经点" : "Waypoint");
-                            } else if (currentText.equals("景点") || currentText.equals("Attraction")) {
-                                itemLabel.setText(LanguageManager.isChineseLanguage() ? "景点" : "Attraction");
-                            } else if (currentText.equals("道路") || currentText.equals("Road")) {
-                                itemLabel.setText(LanguageManager.isChineseLanguage() ? "道路" : "Road");
-                            } else if (currentText.equals("规划路线") || currentText.equals("Planned Route")) {
-                                itemLabel.setText(LanguageManager.isChineseLanguage() ? "规划路线" : "Planned Route");
-                            }
+                            itemLabel.setText(LanguageManager.getText(legendItemKeys[i-1]));
                         }
                     }
                 }
@@ -184,143 +201,96 @@ public class TripPlannerApp extends Application {
     }
     
     private void updateControlsLanguage() {
-        // 遍历所有TitledPane并更新标题
-        updateTitledPaneLabels();
-        
-        // 更新按钮文本
-        updateButtonLabels();
-        
-        // 更新其他标签和提示文本
-        updateLabelsAndPrompts();
-    }
-    
-    private void updateTitledPaneLabels() {
-        BorderPane root = (BorderPane) getScene().getRoot();
-        HBox mainContentArea = (HBox) root.getCenter();
-        if (mainContentArea != null && mainContentArea.getChildren().size() > 0) {
-            // 获取 SplitPane
-            javafx.scene.Node splitPaneNode = mainContentArea.getChildren().get(0);
-            if (splitPaneNode instanceof SplitPane) {
-                SplitPane splitPane = (SplitPane) splitPaneNode;
-                // 遍历SplitPane中的每个面板
-                for (javafx.scene.Node node : splitPane.getItems()) {
-            if (node instanceof VBox) {
-                for (javafx.scene.Node child : ((VBox)node).getChildren()) {
-                    if (child instanceof TitledPane) {
-                        TitledPane pane = (TitledPane)child;
-                        if (pane.getText().equals("城市选择") || pane.getText().equals("City Selection")) {
-                            pane.setText(LanguageManager.getText("citySelection"));
-                        } else if (pane.getText().equals("景点选择") || pane.getText().equals("Attraction Selection")) {
-                            pane.setText(LanguageManager.getText("attractionSelection"));
-                        } else if (pane.getText().equals("计算结果") || pane.getText().equals("Results")) {
-                            pane.setText(LanguageManager.getText("results"));
-                        } else if (pane.getText().equals("路线地图") || pane.getText().equals("Route Map")) {
-                            pane.setText(LanguageManager.getText("routeMap"));
-                                }
-                            }
-                        }
-                    }
-                }
-            }
+        // 更新所有TitledPane的标题
+        if (citySelectionTitledPane != null) {
+            citySelectionTitledPane.setText(LanguageManager.getText("citySelection"));
         }
-    }
-    
-    private void updateButtonLabels() {
-        // 更新主计算按钮
+        if (attractionSelectionTitledPane != null) {
+            attractionSelectionTitledPane.setText(LanguageManager.getText("attractionSelection"));
+        }
+        if (resultTitledPane != null) {
+            resultTitledPane.setText(LanguageManager.getText("results"));
+        }
+        if (mapTitledPane != null) {
+            mapTitledPane.setText(LanguageManager.getText("routeMap"));
+        }
+
+        // 更新按钮文本
         if (calculateButton != null) {
             calculateButton.setText(LanguageManager.getText("calculateRoute"));
         }
-        
-        // 遍历SplitPane中的所有按钮
-        BorderPane root = (BorderPane) getScene().getRoot();
-        HBox mainContentArea = (HBox) root.getCenter();
-        if (mainContentArea != null && mainContentArea.getChildren().size() > 0) {
-            javafx.scene.Node splitPaneNode = mainContentArea.getChildren().get(0);
-            if (splitPaneNode instanceof SplitPane) {
-                SplitPane splitPane = (SplitPane) splitPaneNode;
-                for (javafx.scene.Node node : splitPane.getItems()) {
-            if (node instanceof VBox) {
-                        updateButtonsInContainer((VBox)node);
-                    }
-                }
-            }
+        if (attractionAddButton != null) {
+            attractionAddButton.setText(LanguageManager.getText("add"));
         }
+        if (attractionRemoveButton != null) {
+            attractionRemoveButton.setText(LanguageManager.getText("remove"));
+        }
+
+        // 更新标签和提示文本 (Prompts)
+        // City Selection Pane
+        if (citySearchLabel != null) {
+            citySearchLabel.setText(LanguageManager.getText("searchCity"));
+        }
+        if (citySearchField != null) {
+            citySearchField.setPromptText(LanguageManager.getText("cityPrompt"));
+        }
+        if (startCityLabel != null) {
+            startCityLabel.setText(LanguageManager.getText("startCity"));
+        }
+        if (startCityComboBox != null) {
+            // Preserve current value if any, only update prompt if it's showing
+            if (startCityComboBox.getValue() == null || startCityComboBox.getEditor().getText().isEmpty()) {
+                 startCityComboBox.setPromptText(LanguageManager.getText("selectStartCity"));
+            } // else: dynamic prompt based on no match might be active, or a value is selected.
+              // Consider if noMatchPrompt also needs LanguageManager key.
+        }
+        if (endCityLabel != null) {
+            endCityLabel.setText(LanguageManager.getText("endCity"));
+        }
+        if (endCityComboBox != null) {
+            if (endCityComboBox.getValue() == null || endCityComboBox.getEditor().getText().isEmpty()) {
+                endCityComboBox.setPromptText(LanguageManager.getText("selectEndCity"));
+            } // else: similar to startCityComboBox
+        }
+
+        // Attraction Selection Pane
+        if (attractionSearchLabel != null) {
+            attractionSearchLabel.setText(LanguageManager.getText("searchAttraction"));
+        }
+        if (attractionSearchField != null) {
+            attractionSearchField.setPromptText(LanguageManager.getText("attractionPrompt"));
+        }
+        if (attractionAvailableLabel != null) {
+            attractionAvailableLabel.setText(LanguageManager.getText("availableAttractions"));
+                        }
+        if (attractionSelectedLabel != null) {
+            attractionSelectedLabel.setText(LanguageManager.getText("selectedAttractions"));
+        }
+        
+        // showAlert titles and messages are typically handled at the point of calling showAlert,
+        // by passing LanguageManager.getText("key") directly to showAlert.
+    }
+    
+    private void updateTitledPaneLabels() {
+        // This logic is now in updateControlsLanguage()
+    }
+    
+    private void updateButtonLabels() {
+        // This logic is now in updateControlsLanguage()
+        // The old updateButtonsInContainer can also be removed.
     }
     
     private void updateButtonsInContainer(Pane container) {
-        for (javafx.scene.Node node : container.getChildren()) {
-            if (node instanceof Button) {
-                Button button = (Button)node;
-                if (button.getText().equals("添加 >") || button.getText().equals("Add >")) {
-                    button.setText(LanguageManager.getText("add"));
-                } else if (button.getText().equals("< 删除") || button.getText().equals("< Remove")) {
-                    button.setText(LanguageManager.getText("remove"));
-                }
-            } else if (node instanceof HBox) {
-                updateButtonsInContainer((Pane)node);
-            } else if (node instanceof VBox) {
-                updateButtonsInContainer((Pane)node);
-            }
-        }
+        // This method is no longer needed if buttons are updated via member references.
     }
     
     private void updateLabelsAndPrompts() {
-        // 遍历所有Label和带有提示文本的控件
-        for (javafx.scene.Node node : ((SplitPane)((BorderPane)getScene().getRoot()).getCenter()).getItems()) {
-            if (node instanceof VBox) {
-                for (javafx.scene.Node child : ((VBox)node).getChildren()) {
-                    if (child instanceof TitledPane) {
-                        TitledPane pane = (TitledPane)child;
-                        VBox content = (VBox)pane.getContent();
-                        updateLabelsInContainer(content);
-                    }
-                }
-            }
-        }
+        // This logic is now in updateControlsLanguage()
+        // The old updateLabelsInContainer can also be removed.
     }
     
     private void updateLabelsInContainer(Pane container) {
-        for (javafx.scene.Node node : container.getChildren()) {
-            if (node instanceof Label) {
-                Label label = (Label)node;
-                String text = label.getText();
-                if (text.endsWith(":")) {
-                    if (text.equals("起始城市:") || text.equals("Start City:")) {
-                        label.setText(LanguageManager.getText("startCity"));
-                    } else if (text.equals("目的地城市:") || text.equals("Destination City:")) {
-                        label.setText(LanguageManager.getText("endCity"));
-                    } else if (text.equals("搜索城市:") || text.equals("Search City:")) {
-                        label.setText(LanguageManager.getText("searchCity"));
-                    } else if (text.equals("搜索景点:") || text.equals("Search Attraction:")) {
-                        label.setText(LanguageManager.getText("searchAttraction"));
-                    } else if (text.equals("可选景点:") || text.equals("Available Attractions:")) {
-                        label.setText(LanguageManager.getText("availableAttractions"));
-                    } else if (text.equals("已选景点:") || text.equals("Selected Attractions:")) {
-                        label.setText(LanguageManager.getText("selectedAttractions"));
-                    }
-                }
-            } else if (node instanceof TextField) {
-                TextField textField = (TextField)node;
-                String promptText = textField.getPromptText();
-                if (promptText.equals("输入城市名或州/省缩写") || promptText.equals("Enter city name or state")) {
-                    textField.setPromptText(LanguageManager.getText("cityPrompt"));
-                } else if (promptText.equals("输入景点名称") || promptText.equals("Enter attraction name")) {
-                    textField.setPromptText(LanguageManager.getText("attractionPrompt"));
-                }
-            } else if (node instanceof ComboBox) {
-                ComboBox<?> comboBox = (ComboBox<?>)node;
-                String promptText = comboBox.getPromptText();
-                if (promptText.equals("选择起始城市") || promptText.equals("Select starting city")) {
-                    comboBox.setPromptText(LanguageManager.getText("selectStartCity"));
-                } else if (promptText.equals("选择目的地城市") || promptText.equals("Select destination city")) {
-                    comboBox.setPromptText(LanguageManager.getText("selectEndCity"));
-                }
-            } else if (node instanceof HBox) {
-                updateLabelsInContainer((Pane)node);
-            } else if (node instanceof VBox) {
-                updateLabelsInContainer((Pane)node);
-            }
-        }
+        // This method is no longer needed if labels/prompts are updated via member references.
     }
 
     private VBox createLeftPanel() {
@@ -328,19 +298,19 @@ public class TripPlannerApp extends Application {
         panel.setPadding(new Insets(20));
         
         // 城市选择部分
-        TitledPane cityPane = createCitySelectionPane();
+        this.citySelectionTitledPane = createCitySelectionPane();
         
         // 景点选择部分
-        TitledPane attractionPane = createAttractionSelectionPane();
+        this.attractionSelectionTitledPane = createAttractionSelectionPane();
         
         // 计算按钮
-        calculateButton = new Button("计算最佳路线");
+        calculateButton = new Button(LanguageManager.getText("calculateRoute"));
         calculateButton.setStyle("-fx-background-color: #2196F3; -fx-text-fill: white; -fx-font-size: 14px;");
         calculateButton.setPrefHeight(40);
         calculateButton.setMaxWidth(Double.MAX_VALUE);
         calculateButton.setOnAction(e -> calculateRoute());
         
-        panel.getChildren().addAll(cityPane, attractionPane, calculateButton);
+        panel.getChildren().addAll(this.citySelectionTitledPane, this.attractionSelectionTitledPane, calculateButton);
         
         return panel;
     }
@@ -349,16 +319,16 @@ public class TripPlannerApp extends Application {
         VBox content = new VBox(10);
         content.setPadding(new Insets(10));
         
-        Label searchLabel = new Label(LanguageManager.getText("searchCity"));
-        TextField citySearchField = new TextField();
+        citySearchLabel = new Label(LanguageManager.getText("searchCity"));
+        citySearchField = new TextField();
         citySearchField.setPromptText(LanguageManager.getText("cityPrompt"));
         
-        Label startCityLabel = new Label(LanguageManager.getText("startCity"));
+        startCityLabel = new Label(LanguageManager.getText("startCity"));
         startCityComboBox = new ComboBox<>();
         startCityComboBox.setMaxWidth(Double.MAX_VALUE);
         startCityComboBox.setPromptText(LanguageManager.getText("selectStartCity"));
         
-        Label endCityLabel = new Label(LanguageManager.getText("endCity"));
+        endCityLabel = new Label(LanguageManager.getText("endCity"));
         endCityComboBox = new ComboBox<>();
         endCityComboBox.setMaxWidth(Double.MAX_VALUE);
         endCityComboBox.setPromptText(LanguageManager.getText("selectEndCity"));
@@ -513,10 +483,11 @@ public class TripPlannerApp extends Application {
              endCityComboBox.setPromptText("No cities loaded");
         }
 
-        content.getChildren().addAll(searchLabel, citySearchField, startCityLabel, startCityComboBox, 
+        content.getChildren().addAll(citySearchLabel, citySearchField, startCityLabel, startCityComboBox, 
                                     endCityLabel, endCityComboBox);
         
         TitledPane pane = new TitledPane(LanguageManager.getText("citySelection"), content);
+        pane.setId("citySelectionPane");
         pane.setExpanded(true);
         
         return pane;
@@ -526,15 +497,15 @@ public class TripPlannerApp extends Application {
         VBox content = new VBox(10);
         content.setPadding(new Insets(10));
         
-        Label searchLabel = new Label("搜索景点:");
-        TextField attractionSearchField = new TextField();
-        attractionSearchField.setPromptText("输入景点名称");
+        attractionSearchLabel = new Label(LanguageManager.getText("searchAttraction"));
+        attractionSearchField = new TextField();
+        attractionSearchField.setPromptText(LanguageManager.getText("attractionPrompt"));
         
-        Label availableLabel = new Label("可选景点:");
+        attractionAvailableLabel = new Label(LanguageManager.getText("availableAttractions"));
         ListView<String> availableAttractionsListView = new ListView<>();
         availableAttractionsListView.setPrefHeight(150);
         
-        Label selectedLabel = new Label("已选景点:");
+        attractionSelectedLabel = new Label(LanguageManager.getText("selectedAttractions"));
         selectedAttractions = FXCollections.observableArrayList();
         ListView<String> selectedAttractionsListView = new ListView<>(selectedAttractions);
         selectedAttractionsListView.setPrefHeight(150);
@@ -558,16 +529,17 @@ public class TripPlannerApp extends Application {
                 if (newValue == null || newValue.isEmpty()) {
                     return true;
                 }
-                return attraction.toLowerCase().contains(newValue.toLowerCase());
+                // Ensure attraction is not null before calling toLowerCase
+                return attraction != null && attraction.toLowerCase().contains(newValue.toLowerCase());
             });
         });
         
         HBox buttonBox = new HBox(10);
         buttonBox.setAlignment(Pos.CENTER);
         
-        Button addButton = new Button("添加 >");
-        addButton.setStyle("-fx-background-color: #4CAF50; -fx-text-fill: white;");
-        addButton.setOnAction(e -> {
+        attractionAddButton = new Button(LanguageManager.getText("add"));
+        attractionAddButton.setStyle("-fx-background-color: #4CAF50; -fx-text-fill: white;");
+        attractionAddButton.setOnAction(e -> {
             String selectedItem = availableAttractionsListView.getSelectionModel().getSelectedItem();
             if (selectedItem != null && !selectedAttractions.contains(selectedItem)) {
                 selectedAttractions.add(selectedItem);
@@ -575,9 +547,9 @@ public class TripPlannerApp extends Application {
             }
         });
         
-        Button removeButton = new Button("< 删除");
-        removeButton.setStyle("-fx-background-color: #F44336; -fx-text-fill: white;");
-        removeButton.setOnAction(e -> {
+        attractionRemoveButton = new Button(LanguageManager.getText("remove"));
+        attractionRemoveButton.setStyle("-fx-background-color: #F44336; -fx-text-fill: white;");
+        attractionRemoveButton.setOnAction(e -> {
             String selectedItem = selectedAttractionsListView.getSelectionModel().getSelectedItem();
             if (selectedItem != null) {
                 selectedAttractions.remove(selectedItem);
@@ -587,13 +559,14 @@ public class TripPlannerApp extends Application {
             }
         });
         
-        buttonBox.getChildren().addAll(addButton, removeButton);
+        buttonBox.getChildren().addAll(attractionAddButton, attractionRemoveButton);
         
-        content.getChildren().addAll(searchLabel, attractionSearchField, availableLabel, 
-                                    availableAttractionsListView, buttonBox, selectedLabel, 
+        content.getChildren().addAll(attractionSearchLabel, attractionSearchField, attractionAvailableLabel, 
+                                    availableAttractionsListView, buttonBox, attractionSelectedLabel, 
                                     selectedAttractionsListView);
         
-        TitledPane pane = new TitledPane("景点选择", content);
+        TitledPane pane = new TitledPane(LanguageManager.getText("attractionSelection"), content);
+        pane.setId("attractionSelectionPane");
         pane.setExpanded(true);
         
         return pane;
@@ -604,13 +577,13 @@ public class TripPlannerApp extends Application {
         panel.setPadding(new Insets(20));
         
         // 计算结果部分
-        TitledPane resultPane = createResultPane();
+        this.resultTitledPane = createResultPane();
         
         // 路线地图部分
-        TitledPane mapPane = createMapPane();
+        this.mapTitledPane = createMapPane();
         
-        panel.getChildren().addAll(resultPane, mapPane);
-        VBox.setVgrow(mapPane, Priority.ALWAYS);
+        panel.getChildren().addAll(this.resultTitledPane, this.mapTitledPane);
+        VBox.setVgrow(this.mapTitledPane, Priority.ALWAYS);
         
         return panel;
     }
@@ -621,12 +594,13 @@ public class TripPlannerApp extends Application {
         
         resultTextArea = new TextArea();
         resultTextArea.setEditable(false);
-        resultTextArea.setPrefHeight(150);
+        resultTextArea.setPrefHeight(100);
         resultTextArea.setWrapText(true);
         
         content.getChildren().add(resultTextArea);
         
-        TitledPane pane = new TitledPane("计算结果", content);
+        TitledPane pane = new TitledPane(LanguageManager.getText("results"), content);
+        pane.setId("resultsPane");
         pane.setExpanded(true);
         
         return pane;
@@ -677,6 +651,7 @@ public class TripPlannerApp extends Application {
              });
         }
         
+        pane.setId("mapPane");
         return pane;
     }
 
@@ -763,7 +738,7 @@ public class TripPlannerApp extends Application {
         legendPane.setStyle("-fx-background-color: rgba(255, 255, 255, 0.9); -fx-background-radius: 10; -fx-border-radius: 10; -fx-border-color: lightgray; -fx-min-width: 200;");
         legendPane.setAlignment(Pos.TOP_LEFT);
 
-        Label title = new Label(LanguageManager.isChineseLanguage() ? "图例" : "Legend");
+        Label title = new Label(LanguageManager.getText("legend.title"));
         title.setFont(Font.font("Arial", FontWeight.BOLD, 16));
         title.setTextFill(TEXT_COLOR);
         legendPane.getChildren().add(title);
@@ -772,28 +747,28 @@ public class TripPlannerApp extends Application {
         Circle cityIcon = new Circle(10, CITY_COLOR);
         cityIcon.setStroke(Color.WHITE);
         cityIcon.setStrokeWidth(1.5);
-        Label cityLabel = new Label(LanguageManager.isChineseLanguage() ? "城市" : "City");
+        Label cityLabel = new Label(LanguageManager.getText("legend.city"));
         legendPane.getChildren().add(createLegendItem(cityIcon, cityLabel));
 
         // Start Point
         Circle startIcon = new Circle(10, START_CITY_COLOR);
         startIcon.setStroke(Color.WHITE);
         startIcon.setStrokeWidth(1.5);
-        Label startLabelText = new Label(LanguageManager.getText("startPoint"));
+        Label startLabelText = new Label(LanguageManager.getText("legend.startPoint"));
         legendPane.getChildren().add(createLegendItem(startIcon, startLabelText));
 
         // End Point
         Circle endIcon = new Circle(10, END_CITY_COLOR);
         endIcon.setStroke(Color.WHITE);
         endIcon.setStrokeWidth(1.5);
-        Label endLabelText = new Label(LanguageManager.getText("endPoint"));
+        Label endLabelText = new Label(LanguageManager.getText("legend.endPoint"));
         legendPane.getChildren().add(createLegendItem(endIcon, endLabelText));
         
         // Waypoint (if you want to show this specifically in legend)
         Circle waypointIcon = new Circle(8, WAYPOINT_COLOR); // Smaller for waypoint
         waypointIcon.setStroke(Color.WHITE);
         waypointIcon.setStrokeWidth(1.5);
-        Label waypointLabel = new Label(LanguageManager.isChineseLanguage() ? "途经点" : "Waypoint");
+        Label waypointLabel = new Label(LanguageManager.getText("legend.waypoint"));
         legendPane.getChildren().add(createLegendItem(waypointIcon, waypointLabel));
 
 
@@ -801,19 +776,19 @@ public class TripPlannerApp extends Application {
         Circle attractionIcon = new Circle(8, ATTRACTION_COLOR); // Assuming attractions are circles now
         attractionIcon.setStroke(Color.WHITE);
         attractionIcon.setStrokeWidth(1.5);
-        Label attractionLabelText = new Label(LanguageManager.isChineseLanguage() ? "景点" : "Attraction");
-        legendPane.getChildren().add(createLegendItem(attractionIcon, attractionLabelText));
+        Label attractionItemLabelText = new Label(LanguageManager.getText("legend.attraction")); // Changed variable name to avoid conflict
+        legendPane.getChildren().add(createLegendItem(attractionIcon, attractionItemLabelText));
         
         // Road
         Rectangle roadIcon = new Rectangle(20, 3); 
         roadIcon.setFill(ROAD_COLOR.deriveColor(0,1,1,0.3)); // Fainter road color
-        Label roadLabel = new Label(LanguageManager.isChineseLanguage() ? "道路" : "Road");
+        Label roadLabel = new Label(LanguageManager.getText("legend.road"));
         legendPane.getChildren().add(createLegendItem(roadIcon, roadLabel));
 
         // Route
         Rectangle routeIcon = new Rectangle(20, 5);
         routeIcon.setFill(ROUTE_COLOR); // Thicker route color
-        Label routeLabel = new Label(LanguageManager.isChineseLanguage() ? "规划路线" : "Planned Route");
+        Label routeLabel = new Label(LanguageManager.getText("legend.plannedRoute"));
         legendPane.getChildren().add(createLegendItem(routeIcon, routeLabel));
 
 

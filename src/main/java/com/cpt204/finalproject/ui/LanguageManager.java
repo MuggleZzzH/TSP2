@@ -60,6 +60,16 @@ public class LanguageManager {
         zhResources.put("startPoint", "起点");
         zhResources.put("endPoint", "终点");
         
+        // Legend specific keys for Chinese
+        zhResources.put("legend.title", "图例");
+        zhResources.put("legend.city", "城市");
+        zhResources.put("legend.startPoint", "起点");
+        zhResources.put("legend.endPoint", "终点");
+        zhResources.put("legend.waypoint", "途经点");
+        zhResources.put("legend.attraction", "景点");
+        zhResources.put("legend.road", "道路");
+        zhResources.put("legend.plannedRoute", "规划路线");
+        
         textResources.put(LANGUAGE_CHINESE, zhResources);
         
         // 英文资源
@@ -101,8 +111,18 @@ public class LanguageManager {
         enResources.put("routeError", "Route Calculation Error");
         enResources.put("routeErrorDesc", "Unable to calculate route:");
         enResources.put("languageSwitch", "切换到中文");
-        enResources.put("startPoint", "Start");
-        enResources.put("endPoint", "End");
+        enResources.put("startPoint", "Start Point");
+        enResources.put("endPoint", "End Point");
+
+        // Legend specific keys for English
+        enResources.put("legend.title", "Legend");
+        enResources.put("legend.city", "City");
+        enResources.put("legend.startPoint", "Start Point");
+        enResources.put("legend.endPoint", "End Point");
+        enResources.put("legend.waypoint", "Waypoint");
+        enResources.put("legend.attraction", "Attraction");
+        enResources.put("legend.road", "Road");
+        enResources.put("legend.plannedRoute", "Planned Route");
         
         textResources.put(LANGUAGE_ENGLISH, enResources);
     }
