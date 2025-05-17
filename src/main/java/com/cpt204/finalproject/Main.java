@@ -17,7 +17,7 @@ public class Main {
         // Ensure these CSV files are in the src/main/resources/data/ directory
         // Adjust paths if your files are located elsewhere in the classpath.
         // Using the smaller dataset as requested
-        String roadsCsvPath = "/data/roads_extend.csv"; 
+        String roadsCsvPath = "/data/roads.csv"; 
         String attractionsCsvPath = "/data/attractions.csv";
         
         RoadNetwork roadNetwork = dataLoader.loadData(roadsCsvPath, attractionsCsvPath);
